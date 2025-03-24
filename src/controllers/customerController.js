@@ -2,7 +2,7 @@
 const debug = require('debug')('app')
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
-const customerRegistrationSchema = require('../schemas/customerSchema')
+const { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema } = require('../schemas/customerSchema')
 
 const registerCustomer = async (req, res) => {
   const { error } = customerRegistrationSchema.validate(req.body)
@@ -53,7 +53,74 @@ const getCustomers = async (req, res) => {
   res.json(customers) // Send the filtered customer data
 }
 
+const getCustomerById = async (req, res) => {
+  const { id } = req.params
+
+  const customer = await knex('customers').select('id', 'first_name', 'last_name', 'email', 'phone').where('id', id).first()
+
+  if (!customer) {
+    return res.status(404).json({ message: 'Customer not found' })
+  }
+
+  res.json(customer)
+}
+
+const updateCustomer = async (req, res) => {
+  const { error } = customerUpdateSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message })
+  }
+
+  const { id } = req.params
+  const { first_name, last_name, email, phone } = req.body
+
+  // Check if customer exists
+  const customer = await knex('customers').where('id', id).first()
+  if (!customer) {
+    return res.status(404).json({ message: 'Customer not found' })
+  }
+
+  // Update customer details
+  await knex('customers').where('id', id).update({ first_name, last_name, email, phone })
+
+  res.json({ message: 'Customer updated successfully' })
+}
+
+const updatePassword = async (req, res) => {
+  // Validate input
+  const { error } = passwordUpdateSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message })
+  }
+
+  const { id } = req.params
+  const { old_password, new_password } = req.body
+
+  // Check if customer exists
+  const customer = await knex('customers').where('id', id).first()
+  if (!customer) {
+    return res.status(404).json({ message: 'Customer not found' })
+  }
+
+  // Verify old password
+  const isMatch = await bcrypt.compare(old_password, customer.password_hash)
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Incorrect old password' })
+  }
+
+  // Hash the new password
+  const hashedPassword = await bcrypt.hash(new_password, 10)
+
+  // Update the password
+  await knex('customers').where('id', id).update({ password_hash: hashedPassword })
+
+  res.json({ message: 'Password updated successfully' })
+}
+
 module.exports = {
   registerCustomer,
-  getCustomers
+  getCustomers,
+  getCustomerById,
+  updateCustomer,
+  updatePassword
 }
