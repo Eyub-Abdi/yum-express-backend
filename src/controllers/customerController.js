@@ -3,6 +3,7 @@ const debug = require('debug')('app')
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
 const { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema } = require('../schemas/customerSchema')
+const authorizeUser = require('../middleware/authorizeUser')
 
 const registerCustomer = async (req, res) => {
   const { error } = customerRegistrationSchema.validate(req.body)
@@ -92,12 +93,11 @@ const updatePassword = async (req, res) => {
   if (error) {
     return res.status(400).json({ error: error.details[0].message })
   }
-
-  const { id } = req.params
+  const customerId = req.user.id // Get ID from authenticated user
   const { old_password, new_password } = req.body
 
-  // Check if customer exists
-  const customer = await knex('customers').where('id', id).first()
+  // Fetch customer from DB
+  const customer = await knex('customers').where('id', customerId).first()
   if (!customer) {
     return res.status(404).json({ message: 'Customer not found' })
   }
@@ -108,13 +108,34 @@ const updatePassword = async (req, res) => {
     return res.status(400).json({ message: 'Incorrect old password' })
   }
 
-  // Hash the new password
+  // Hash new password and update
   const hashedPassword = await bcrypt.hash(new_password, 10)
-
-  // Update the password
-  await knex('customers').where('id', id).update({ password_hash: hashedPassword })
+  await knex('customers').where('id', customerId).update({ password_hash: hashedPassword })
 
   res.json({ message: 'Password updated successfully' })
+}
+
+const deleteCustomer = async (req, res) => {
+  let customerId = req.user.id
+
+  // Admins can delete any customer by passing an ID in the request params
+  if (req.user.type === 'admin' && req.params.id) {
+    customerId = Number(req.params.id)
+  } else if (req.params.id && Number(req.params.id) !== customerId) {
+    // Regular users cannot delete others
+    return res.status(403).json({ message: 'Unauthorized' })
+  }
+
+  // Check if the customer exists
+  const customer = await knex('customers').where('id', customerId).first()
+  if (!customer) {
+    return res.status(404).json({ message: 'Customer not found' })
+  }
+
+  // Delete the customer
+  await knex('customers').where('id', customerId).del()
+
+  res.json({ message: 'Customer deleted successfully' })
 }
 
 module.exports = {
@@ -122,5 +143,6 @@ module.exports = {
   getCustomers,
   getCustomerById,
   updateCustomer,
-  updatePassword
+  updatePassword,
+  deleteCustomer
 }
