@@ -1,7 +1,7 @@
 // src/routes/customerRoutes.js
 const express = require('express')
 const { registerCustomer, getCustomerById, getCustomers, updateCustomer, updatePassword, deleteCustomer } = require('../controllers/customerController')
-const authorizeUser = require('../middleware/authorizeUser')
+const authenticatUser = require('../middleware/authenticateUser')
 
 const router = express.Router()
 
@@ -9,9 +9,9 @@ const router = express.Router()
 router.post('/register', registerCustomer)
 router.get('/', getCustomers)
 router.get('/:id', getCustomerById)
-router.put('/:id', authorizeUser, updateCustomer)
-router.put('/update-password/:id', authorizeUser, updatePassword)
-router.delete('/', authorizeUser, deleteCustomer)
-router.delete('/:id', authorizeUser, deleteCustomer) // Admins delete any customer
+router.put('/:id', authenticatUser, updateCustomer)
+router.put('/update-password/:id', authenticatUser, updatePassword)
+router.delete('/', authenticatUser, deleteCustomer)
+router.delete('/:id', authenticatUser, deleteCustomer) // Admins delete any customer
 
 module.exports = router
