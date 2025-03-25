@@ -8,5 +8,11 @@ module.exports = {
   jwt: {
     secret: process.env.JWT_SECRET || 'your-secret-key', // Default secret if no env var is set
     expiresIn: process.env.JWT_EXPIRES_IN || '1h' // Default expiration time if no env var is set
+  },
+  email: {
+    user: process.env.BREVO_EMAIL_USER // Email address
+  },
+  brevo: {
+    apiKey: process.env.BREVO_API_KEY
   }
 }
