@@ -9,6 +9,7 @@ const vendorRegistrationSchema = Joi.object({
     .pattern(/^[0-9]{10}$/) // You can adjust this pattern if needed
     .required(),
   banner: Joi.string().uri().required(), // Assuming the banner is a URL
+  address: Joi.string().min(3).max(100).required(),
   latitude: Joi.number().required(),
   longitude: Joi.number().required(),
   category: Joi.string().valid('restaurant', 'grocery').required(),
