@@ -3,7 +3,7 @@ const debug = require('debug')('app')
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
 const { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema } = require('../schemas/customerSchema')
-const authorizeUser = require('../middleware/authorizeUser')
+const authorizeUser = require('../middleware/authenticateUser')
 
 const registerCustomer = async (req, res) => {
   const { error } = customerRegistrationSchema.validate(req.body)

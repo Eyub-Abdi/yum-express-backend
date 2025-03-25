@@ -1,7 +1,8 @@
-// src/controllers/vendorController.js
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
 const vendorRegistrationSchema = require('../schemas/vendorSchema')
+const { sendVerificationEmail } = require('../services/emailService') // Import the email service
+const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService') // Import token generation functions
 
 const registerVendor = async (req, res) => {
   const { error } = vendorRegistrationSchema.validate(req.body)
@@ -9,7 +10,7 @@ const registerVendor = async (req, res) => {
     return res.status(400).json({ error: error.details[0].message })
   }
 
-  const { first_name, last_name, email, phone, banner, latitude, longitude, category, business_name, password } = req.body
+  const { first_name, last_name, email, phone, banner, address, latitude, longitude, category, business_name, password } = req.body
 
   // Check if the vendor already exists by email or phone number
   const existingVendor = await knex('vendors').where('email', email).orWhere('phone', phone).first()
@@ -23,9 +24,9 @@ const registerVendor = async (req, res) => {
   // Hash the password
   const hashedPassword = await bcrypt.hash(password, 10)
 
-  // Generate a verification token (can be a random string or UUID)
-  const verificationToken = generateVerificationToken() // You can define this function to generate a random token
-  const verificationTokenExpiry = new Date(Date.now() + 3600000) // Token valid for 1 hour
+  // Generate the verification token and expiry time
+  const verificationToken = generateVerificationToken()
+  const verificationTokenExpiry = generateVerificationTokenExpiry() // 1 hour validity
 
   // Insert the new vendor into the database
   const [newVendor] = await knex('vendors')
@@ -35,6 +36,7 @@ const registerVendor = async (req, res) => {
       email,
       phone,
       banner,
+      address,
       latitude,
       longitude,
       category,
@@ -49,6 +51,14 @@ const registerVendor = async (req, res) => {
     })
     .returning('*')
 
+  // Send the verification email
+  try {
+    await sendVerificationEmail(email, verificationToken)
+    console.log('Verification email sent to:', email)
+  } catch (err) {
+    console.error('Error sending verification email:', err)
+  }
+
   // Return success message
   return res.status(201).json({
     message: 'Vendor registered successfully! Please verify your email.',
@@ -59,6 +69,7 @@ const registerVendor = async (req, res) => {
       email: newVendor.email,
       phone: newVendor.phone,
       banner: newVendor.banner,
+      address: newVendor.address,
       latitude: newVendor.latitude,
       longitude: newVendor.longitude,
       category: newVendor.category,
@@ -69,12 +80,6 @@ const registerVendor = async (req, res) => {
       verified: newVendor.verified
     }
   })
-}
-
-// Helper function to generate a verification token
-const generateVerificationToken = () => {
-  // You can implement your preferred method to generate a token (e.g., random string or UUID)
-  return Math.random().toString(36).substr(2) // Simple random string (you can improve this)
 }
 
 module.exports = {
