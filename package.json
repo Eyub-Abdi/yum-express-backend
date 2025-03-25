@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@getbrevo/brevo": "^2.2.0",
     "bcrypt": "^5.1.1",
     "config": "^3.3.12",
     "debug": "^4.4.0",
