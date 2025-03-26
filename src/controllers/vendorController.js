@@ -1,9 +1,11 @@
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
-const vendorRegistrationSchema = require('../schemas/vendorSchema')
+const { vendorRegistrationSchema, vendorUpdateSchema, vendorEmailUpdateSchema } = require('../schemas/vendorSchema')
+const updatePasswordSchema = require('../schemas/updatePasswordSchema')
 const { sendVerificationEmail } = require('../services/emailService') // Import the email service
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService') // Import token generation functions
 const { verifyEmail } = require('../services/emailVerificationService')
+const { validateId } = require('../utils/validateId')
 
 const registerVendor = async (req, res) => {
   const { error } = vendorRegistrationSchema.validate(req.body)
@@ -82,11 +84,202 @@ const registerVendor = async (req, res) => {
   })
 }
 
+const getVendors = async (req, res, next) => {
+  const vendors = await knex('vendors').select('id', 'first_name', 'last_name', 'email', 'phone', 'banner', 'address', 'latitude', 'longitude', 'category', 'business_name', 'is_active', 'verified') // Select only necessary fields
+
+  res.json(vendors) // Send the filtered vendor data
+}
+
+const getVendorById = async (req, res) => {
+  const { id } = req.params
+
+  // Validate the ID format
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid ID format' })
+  }
+
+  // Retrieve the vendor by ID
+  const vendor = await knex('vendors').select('id', 'first_name', 'last_name', 'email', 'phone', 'banner', 'address', 'latitude', 'longitude', 'category', 'business_name', 'is_active', 'verified', 'created_at', 'updated_at').where({ id }).first()
+
+  // If vendor not found, return a 404 error
+  if (!vendor) {
+    return res.status(404).json({ message: 'Vendor not found' })
+  }
+
+  // Return the vendor data
+  res.json(vendor)
+}
+
+const updateVendor = async (req, res) => {
+  const { id } = req.params
+
+  // Validate the ID
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid ID format' })
+  }
+
+  // Validate the request body with the schema
+  const { error } = vendorUpdateSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message })
+  }
+
+  // Check if the vendor exists
+  const vendor = await knex('vendors').where({ id }).first()
+  if (!vendor) {
+    return res.status(404).json({ message: 'Vendor not found' })
+  }
+
+  // Update vendor details excluding the password
+  await knex('vendors')
+    .where({ id })
+    .update({
+      first_name: req.body.first_name || vendor.first_name,
+      last_name: req.body.last_name || vendor.last_name,
+      phone: req.body.phone || vendor.phone,
+      banner: req.body.banner || vendor.banner,
+      address: req.body.address || vendor.address,
+      latitude: req.body.latitude || vendor.latitude,
+      longitude: req.body.longitude || vendor.longitude,
+      category: req.body.category || vendor.category,
+      business_name: req.body.business_name || vendor.business_name,
+      updated_at: new Date()
+    })
+
+  res.json({ message: 'Vendor updated successfully' })
+}
+
+const updateVendorEmail = async (req, res) => {
+  const { id } = req.params
+  const { email } = req.body
+
+  // Validate the ID
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid ID format' })
+  }
+  // Validate the email
+  const { error } = vendorEmailUpdateSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message })
+  }
+
+  // Check if the vendor exists
+  const vendor = await knex('vendors').where({ id }).first()
+  if (!vendor) {
+    return res.status(404).json({ message: 'Vendor not found' })
+  }
+
+  // Validate the new email
+  const emailExists = await knex('vendors').where({ email }).first()
+  if (emailExists) {
+    return res.status(400).json({ message: 'Email is already in use' })
+  }
+
+  // Generate the verification token and expiry time
+  const verificationToken = generateVerificationToken()
+  const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 48 hours validity
+
+  // Prepare updated data
+  const updatedData = {
+    email,
+    verification_token: verificationToken,
+    verification_token_expiry: verificationTokenExpiry,
+    verified: false, // Reset verification status
+    updated_at: new Date()
+  }
+
+  // Update vendor's email and verification data
+  await knex('vendors').where({ id }).update(updatedData)
+
+  // Send verification email to the new email address
+  try {
+    await sendVerificationEmail(email, vendor.first_name, verificationToken, 'vendors')
+  } catch (err) {
+    return res.status(500).json({ message: 'Error sending verification email' })
+  }
+
+  res.json({ message: 'Email updated successfully. Please verify the new email address.' })
+}
+
+const deleteVendor = async (req, res) => {
+  const { id } = req.params
+
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid ID format' })
+  }
+
+  const deletedRows = await knex('vendors').where({ id }).del()
+
+  if (!deletedRows) {
+    return res.status(404).json({ message: 'Vendor not found' })
+  }
+
+  res.json({ message: 'Vendor deleted successfully' })
+}
+
+const deactivateOwnVendorAccount = async (req, res) => {
+  const vendorId = req.user.id // Vendor ID from authentication
+
+  // Get current status
+  const vendor = await knex('vendors').select('is_active').where({ id: vendorId }).first()
+
+  if (!vendor) {
+    return res.status(404).json({ message: 'Vendor not found' })
+  }
+
+  if (!vendor.is_active) {
+    return res.status(400).json({ message: 'Account is already inactive' })
+  }
+
+  // Update vendor status to inactive
+  await knex('vendors').where({ id: vendorId }).update({ is_active: false })
+
+  res.json({ message: 'Account deactivated successfully' })
+}
+
+const updateVendorPassword = async (req, res) => {
+  const { id } = req.user // Authenticated vendor ID
+  const { old_password, new_password } = req.body
+
+  // Validate request body
+  const { error } = updatePasswordSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message })
+  }
+
+  // Fetch the vendor
+  const vendor = await knex('vendors').where({ id }).select('password_hash').first()
+  if (!vendor) {
+    return res.status(404).json({ message: 'Vendor not found' })
+  }
+
+  // Check if the old password matches
+  const isMatch = await bcrypt.compare(old_password, vendor.password_hash)
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Incorrect old password' })
+  }
+
+  // Hash the new password
+  const hashedPassword = await bcrypt.hash(new_password, 10)
+
+  // Update the password in the database
+  await knex('vendors').where({ id }).update({ password_hash: hashedPassword })
+
+  res.json({ message: 'Password updated successfully' })
+}
+
 const verifyVendorEmail = async (req, res) => {
   await verifyEmail('vendors', req, res)
 }
 
 module.exports = {
   registerVendor,
+  getVendors,
+  getVendorById,
+  updateVendor,
+  updateVendorEmail,
+  deleteVendor,
+  deactivateOwnVendorAccount,
+  updateVendorPassword,
   verifyVendorEmail
 }

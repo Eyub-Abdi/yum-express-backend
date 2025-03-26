@@ -6,4 +6,4 @@ const updatePasswordSchema = Joi.object({
   new_password: Joi.string().min(6).required()
 })
 
-module.exports = { updatePasswordSchema }
+module.exports = updatePasswordSchema
