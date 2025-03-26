@@ -4,6 +4,9 @@ const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
 const { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema } = require('../schemas/customerSchema')
 const authorizeUser = require('../middleware/authenticateUser')
+const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
+const { sendVerificationEmail } = require('../services/emailService')
+const { verifyEmail } = require('../services/emailVerificationService')
 
 const registerCustomer = async (req, res) => {
   const { error } = customerRegistrationSchema.validate(req.body)
@@ -25,6 +28,10 @@ const registerCustomer = async (req, res) => {
   // Hash the password
   const hashedPassword = await bcrypt.hash(password, 10)
 
+  // Generate the verification token and expiry time
+  const verificationToken = generateVerificationToken()
+  const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 1 hour validity
+
   // Insert the new customer into the database
   const [newCustomer] = await knex('customers')
     .insert({
@@ -32,9 +39,18 @@ const registerCustomer = async (req, res) => {
       last_name,
       email,
       phone,
-      password_hash: hashedPassword
+      password_hash: hashedPassword,
+      verification_token: verificationToken,
+      verification_token_expiry: verificationTokenExpiry
     })
     .returning('*')
+
+  // Send the verification email
+  try {
+    await sendVerificationEmail(email, first_name, verificationToken, 'customers')
+  } catch (err) {
+    console.error('Error sending verification email:', err)
+  }
 
   return res.status(201).json({
     message: 'Customer registered successfully!',
@@ -138,11 +154,16 @@ const deleteCustomer = async (req, res) => {
   res.json({ message: 'Customer deleted successfully' })
 }
 
+const verifyCustomerEmail = async (req, res) => {
+  await verifyEmail('customers', req, res)
+}
+
 module.exports = {
   registerCustomer,
   getCustomers,
   getCustomerById,
   updateCustomer,
   updatePassword,
-  deleteCustomer
+  deleteCustomer,
+  verifyCustomerEmail
 }

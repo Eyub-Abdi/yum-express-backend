@@ -3,6 +3,7 @@ const knex = require('../db/knex')
 const vendorRegistrationSchema = require('../schemas/vendorSchema')
 const { sendVerificationEmail } = require('../services/emailService') // Import the email service
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService') // Import token generation functions
+const { verifyEmail } = require('../services/emailVerificationService')
 
 const registerVendor = async (req, res) => {
   const { error } = vendorRegistrationSchema.validate(req.body)
@@ -82,28 +83,7 @@ const registerVendor = async (req, res) => {
 }
 
 const verifyVendorEmail = async (req, res) => {
-  const { token } = req.query
-
-  if (!token) {
-    return res.status(400).json({ message: 'Invalid verification token' })
-  }
-
-  // Find the vendor with the given token and check if it's still valid
-  const vendor = await knex('vendors').where({ verification_token: token }).andWhere('verification_token_expiry', '>', new Date()).first()
-
-  if (!vendor) {
-    return res.status(400).json({ message: 'Invalid or expired token' })
-  }
-
-  // Update vendor to mark as verified
-  await knex('vendors').where({ id: vendor.id }).update({
-    verified: true,
-    verification_token: null,
-    verification_token_expiry: null,
-    updated_at: new Date()
-  })
-
-  return res.json({ message: 'Email verified successfully!' })
+  await verifyEmail('vendors', req, res)
 }
 
 module.exports = {
