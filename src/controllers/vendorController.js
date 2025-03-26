@@ -53,8 +53,7 @@ const registerVendor = async (req, res) => {
 
   // Send the verification email
   try {
-    await sendVerificationEmail(email, first_name, verificationToken)
-    console.log('Verification email sent to:', email)
+    await sendVerificationEmail(email, first_name, verificationToken, 'vendors')
   } catch (err) {
     console.error('Error sending verification email:', err)
   }
