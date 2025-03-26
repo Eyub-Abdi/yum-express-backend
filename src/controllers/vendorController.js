@@ -26,7 +26,7 @@ const registerVendor = async (req, res) => {
 
   // Generate the verification token and expiry time
   const verificationToken = generateVerificationToken()
-  const verificationTokenExpiry = generateVerificationTokenExpiry() // 1 hour validity
+  const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 1 hour validity
 
   // Insert the new vendor into the database
   const [newVendor] = await knex('vendors')
@@ -53,7 +53,7 @@ const registerVendor = async (req, res) => {
 
   // Send the verification email
   try {
-    await sendVerificationEmail(email, verificationToken)
+    await sendVerificationEmail(email, first_name, verificationToken)
     console.log('Verification email sent to:', email)
   } catch (err) {
     console.error('Error sending verification email:', err)
@@ -82,6 +82,32 @@ const registerVendor = async (req, res) => {
   })
 }
 
+const verifyVendorEmail = async (req, res) => {
+  const { token } = req.query
+
+  if (!token) {
+    return res.status(400).json({ message: 'Invalid verification token' })
+  }
+
+  // Find the vendor with the given token and check if it's still valid
+  const vendor = await knex('vendors').where({ verification_token: token }).andWhere('verification_token_expiry', '>', new Date()).first()
+
+  if (!vendor) {
+    return res.status(400).json({ message: 'Invalid or expired token' })
+  }
+
+  // Update vendor to mark as verified
+  await knex('vendors').where({ id: vendor.id }).update({
+    verified: true,
+    verification_token: null,
+    verification_token_expiry: null,
+    updated_at: new Date()
+  })
+
+  return res.json({ message: 'Email verified successfully!' })
+}
+
 module.exports = {
-  registerVendor
+  registerVendor,
+  verifyVendorEmail
 }
