@@ -10,9 +10,7 @@ module.exports = {
     expiresIn: process.env.JWT_EXPIRES_IN || '1h' // Default expiration time if no env var is set
   },
   email: {
-    user: process.env.BREVO_EMAIL_USER // Email address
-  },
-  brevo: {
-    apiKey: process.env.BREVO_API_KEY
+    user: process.env.MAIL_USER, // Email address
+    pass: process.env.APP_PASS
   }
 }
