@@ -17,4 +17,21 @@ const vendorRegistrationSchema = Joi.object({
   password: Joi.string().min(6).required()
 })
 
-module.exports = vendorRegistrationSchema
+// vendorUpdateSchema.js
+const vendorUpdateSchema = Joi.object({
+  first_name: Joi.string().min(3).max(50),
+  last_name: Joi.string().min(3).max(50),
+  phone: Joi.string().pattern(/^[0-9]{10}$/), // You can adjust this pattern if needed
+  banner: Joi.string().uri(), // Assuming the banner is a URL
+  address: Joi.string().min(3).max(100),
+  latitude: Joi.number(),
+  longitude: Joi.number(),
+  category: Joi.string().valid('restaurant', 'grocery'),
+  business_name: Joi.string().min(3).max(100)
+})
+
+const vendorEmailUpdateSchema = Joi.object({
+  email: Joi.string().email().required() // Ensures the email field is provided
+})
+
+module.exports = { vendorRegistrationSchema, vendorUpdateSchema, vendorEmailUpdateSchema }
