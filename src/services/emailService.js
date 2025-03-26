@@ -9,10 +9,13 @@ const transporter = nodemailer.createTransport({
   }
 })
 
-const sendVerificationEmail = async (recipientEmail, firstName, verificationToken) => {
+// Function to send the verification email for different entities (customers, vendors, admins)
+const sendVerificationEmail = async (recipientEmail, firstName, verificationToken, entityType) => {
   try {
     const senderEmail = config.email.user
-    const verificationLink = `http://localhost:5000/verify-email?token=${verificationToken}`
+
+    // Dynamically create the verification link based on entity type
+    const verificationLink = `http://localhost:5000/api/${entityType}/verify-email?token=${verificationToken}`
 
     const emailData = {
       from: senderEmail,
@@ -29,7 +32,7 @@ const sendVerificationEmail = async (recipientEmail, firstName, verificationToke
 
             <!-- Header -->
             <div style="background: #e63946; padding: 20px; border-radius: 5px;">
-              <img src="https://previews.dropbox.com/p/thumb/ACm_5CMfxpH5AST5s_GU5XIR6KQmiAUu4s9rQEr3TBn64TGNBwRhqwDpolYhLr5zfom12nfeWJ9a11mOI7T7fulkZZdvAEUQHIx44v2EKOoHa2l37bojY2TKeH5zmNmGiRx-gzaWTf2-Yb2NDUDejJaXY7Yw_S5xiCqkWVamFj7HSki8rKMUUdkOQCWjTFVHlEyXlNfYsXlIM7FqNikjCeCV4Px2kNDuI6gITkCk1Dgi-4GKJ9-DMyxWfjJBlfQ-DAHZJM5jpDMHG_5E9D8EPbazP7yUW1BxYkmmY2AOfl_Ihzxsv_8pHrh3E_F_FCTru7fDTxbrByeT7xANJK1ETpOO/p.png?is_prewarmed=true" alt="Email Verification" style="max-width: 50px;">
+              <img src="https://your-icon-url.com/icon.png" alt="Email Verification" style="max-width: 50px;">
             </div>
 
             <!-- Main Content -->
@@ -41,12 +44,11 @@ const sendVerificationEmail = async (recipientEmail, firstName, verificationToke
             </p>
 
             <!-- Verify Button -->
-            <a href="http://localhost:5000/api/vendors/verify-email?token=${verificationToken}" 
+            <a href="${verificationLink}" 
             style="display: inline-block; padding: 12px 20px; margin: 10px 0; font-size: 16px; 
             color: #fff; background-color: #e63946; text-decoration: none; border-radius: 5px; font-weight: bold;">
             Verify my email address
             </a>
-
 
             <hr style="margin-top: 20px;">
 
