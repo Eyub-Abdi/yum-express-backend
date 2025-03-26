@@ -14,7 +14,7 @@ if (!config.jwt.secret) {
 
 debug(config.db.database)
 debug(config.email.user)
-debug(config.brevo.apiKey)
+debug(config.email.pass)
 
 app.use(express.json())
 app.use('/api/auth', authRoutes)
