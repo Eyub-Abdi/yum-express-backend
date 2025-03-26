@@ -1,9 +1,9 @@
 const express = require('express')
 const router = express.Router()
 const { loginCustomer } = require('../controllers/customerAuth')
-// const { loginVendor } = require('../controllers/vendorController')
+const { loginVendor } = require('../controllers/vendorAuth')
 
 router.post('/customers/login', loginCustomer)
-// router.post('/vendors/login', loginVendor)
+router.post('/vendors/login', loginVendor)
 
 module.exports = router
