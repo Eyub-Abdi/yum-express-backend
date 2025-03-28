@@ -1,13 +1,13 @@
 const express = require('express')
 const router = express.Router()
-const { registerVendor, getVendors, getVendorById, updateVendor, updateVendorEmail, deleteVendor, updateVendorPassword, deactivateOwnVendorAccount } = require('../controllers/vendorController') // Import the vendor controller
+const { registerVendor, getVendorById, updateVendor, updateVendorEmail, deleteVendor, updateVendorPassword, deactivateOwnVendorAccount, getVendorsWithFilter } = require('../controllers/vendorController') // Import the vendor controller
 const { verifyVendorEmail } = require('../controllers/vendorController')
 const authenticateUser = require('../middleware/authenticateUser')
 
 // Vendor routes
 router.post('/register', registerVendor)
 router.get('/verify-email', verifyVendorEmail)
-router.get('/', getVendors)
+router.get('/', getVendorsWithFilter)
 router.get('/:id', getVendorById)
 router.put('/update-password', authenticateUser, updateVendorPassword)
 router.put('/deactivate-account', authenticateUser, deactivateOwnVendorAccount)
