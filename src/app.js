@@ -7,6 +7,7 @@ const customerRoutes = require('./routes/customerRoutes')
 const vendoRoutes = require('./routes/vendorRoutes')
 const authRoutes = require('./routes/authRoutes')
 const productRoutes = require('./routes/productRoutes')
+const reviewRoutes = require('./routes/reviewRoutes')
 
 if (!config.jwt.secret) {
   debug('FATAL ERROR, JWT_SECRET IS NOT SET')
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/customers', customerRoutes)
 app.use('/api/vendors', vendoRoutes)
 app.use('/api/products', productRoutes)
+app.use('/api/reviews', reviewRoutes)
 
 app.get('/', (req, res) => res.send('Home'))
 
