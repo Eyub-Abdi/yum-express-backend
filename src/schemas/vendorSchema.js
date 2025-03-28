@@ -34,4 +34,12 @@ const vendorEmailUpdateSchema = Joi.object({
   email: Joi.string().email().required() // Ensures the email field is provided
 })
 
-module.exports = { vendorRegistrationSchema, vendorUpdateSchema, vendorEmailUpdateSchema }
+// src/schemas/vendorLocationSchema.js
+
+const vendorLocationSchema = Joi.object({
+  lat: Joi.number().required().min(-90).max(90).message('Latitude must be between -90 and 90'),
+  lon: Joi.number().required().min(-180).max(180).message('Longitude must be between -180 and 180'),
+  category: Joi.string().valid('restaurant', 'grocery').optional()
+})
+
+module.exports = { vendorRegistrationSchema, vendorUpdateSchema, vendorEmailUpdateSchema, vendorLocationSchema }
