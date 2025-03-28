@@ -1,5 +1,5 @@
 const knex = require('../db/knex')
-const { productSchema, productUpdateSchema } = require('../schemas/productSchema')
+const { productSchema, productUpdateSchema, productQuerySchema } = require('../schemas/productSchema')
 const { validateId } = require('../utils/validateId')
 
 const addProduct = async (req, res) => {
@@ -31,8 +31,35 @@ const addProduct = async (req, res) => {
 }
 
 const getProducts = async (req, res) => {
-  const products = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_available', 'image_url', 'created_at', 'updated_at')
+  // Validate query parameters
+  const { error, value } = productQuerySchema.validate(req.query)
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message })
+  }
 
+  const { category, min_price, max_price, sort, page, limit, in_stock } = value
+
+  let query = knex('products').select('*')
+
+  if (category) query = query.where('category', category)
+  if (min_price) query = query.where('price', '>=', min_price)
+  if (max_price) query = query.where('price', '<=', max_price)
+  if (in_stock === 'true') query = query.where('stock', '>', 0)
+
+  const sortOptions = {
+    price_asc: ['price', 'asc'],
+    price_desc: ['price', 'desc'],
+    name_asc: ['name', 'asc'],
+    name_desc: ['name', 'desc'],
+    newest: ['created_at', 'desc'],
+    oldest: ['created_at', 'asc']
+  }
+  if (sort) query = query.orderBy(...sortOptions[sort])
+
+  const offset = (page - 1) * limit
+  query = query.limit(limit).offset(offset)
+
+  const products = await query
   res.json(products)
 }
 

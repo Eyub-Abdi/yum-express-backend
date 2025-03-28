@@ -19,4 +19,12 @@ const productUpdateSchema = Joi.object({
   image_url: Joi.string().uri().optional() // Allow updating image URL
 }).min(1) // Ensure at least one field is provided
 
-module.exports = { productSchema, productUpdateSchema }
+const productQuerySchema = Joi.object({
+  min_price: Joi.number().min(0).optional(),
+  max_price: Joi.number().min(0).optional(),
+  sort: Joi.string().valid('price_asc', 'price_desc', 'name_asc', 'name_desc', 'newest', 'oldest').optional(),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+  in_stock: Joi.string().valid('true', 'false').optional()
+})
+module.exports = { productSchema, productUpdateSchema, productQuerySchema }
