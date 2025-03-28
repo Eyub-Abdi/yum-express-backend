@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
-const { vendorRegistrationSchema, vendorUpdateSchema, vendorEmailUpdateSchema } = require('../schemas/vendorSchema')
+const { vendorRegistrationSchema, vendorUpdateSchema, vendorEmailUpdateSchema, vendorLocationSchema } = require('../schemas/vendorSchema')
 const vendorQuerySchema = require('../schemas/vendorQuerySchema')
 const updatePasswordSchema = require('../schemas/updatePasswordSchema')
 const { sendVerificationEmail } = require('../services/emailService') // Import the email service
@@ -307,10 +307,72 @@ const verifyVendorEmail = async (req, res) => {
   await verifyEmail('vendors', req, res)
 }
 
+const getNearbyVendors = async (req, res) => {
+  // Validate query parameters
+  const { error, value } = vendorLocationSchema.validate(req.query)
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message })
+  }
+
+  const { lat, lon, category } = value
+
+  // Convert to geography type for meter-based distance calculations
+  let query = knex('vendors')
+    .select(
+      'id',
+      'business_name',
+      'latitude',
+      'longitude',
+      'category',
+      knex.raw(
+        `
+        ST_Distance(
+          location::geography, 
+          ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography
+        ) AS distance
+      `,
+        [lon, lat]
+      )
+    )
+    .whereRaw(
+      `
+      ST_DWithin(
+        location::geography,
+        ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography,
+        5000
+      )
+    `,
+      [lon, lat]
+    )
+
+  // Apply category filter if provided
+  if (category) {
+    query = query.where('category', category)
+  }
+
+  // Fetch vendors from the database
+  const vendors = await query
+
+  if (vendors.length === 0) {
+    return res.status(404).json({ message: 'No nearby vendors found' })
+  }
+
+  // Sort vendors first by category, then by distance
+  vendors.sort((a, b) => {
+    if (a.category === b.category) {
+      return a.distance - b.distance
+    }
+    return a.category.localeCompare(b.category)
+  })
+
+  res.json(vendors)
+}
+
 module.exports = {
   registerVendor,
   getVendorsWithFilter,
   getVendorById,
+  getNearbyVendors,
   updateVendor,
   updateVendorEmail,
   deleteVendor,
