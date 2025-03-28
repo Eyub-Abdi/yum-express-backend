@@ -42,6 +42,7 @@ const registerVendor = async (req, res) => {
       banner,
       address,
       latitude,
+      location: knex.raw('ST_SetSRID(ST_MakePoint(?, ?), 4326)', [longitude, latitude]), // Create location from lat/long
       longitude,
       category,
       business_name, // Added business_name field
@@ -75,6 +76,7 @@ const registerVendor = async (req, res) => {
       address: newVendor.address,
       latitude: newVendor.latitude,
       longitude: newVendor.longitude,
+      location: newVendor.location,
       category: newVendor.category,
       business_name: newVendor.business_name, // Included business_name in the response
       is_active: newVendor.is_active,
