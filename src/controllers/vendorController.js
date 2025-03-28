@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
 const { vendorRegistrationSchema, vendorUpdateSchema, vendorEmailUpdateSchema } = require('../schemas/vendorSchema')
+const vendorQuerySchema = require('../schemas/vendorQuerySchema')
 const updatePasswordSchema = require('../schemas/updatePasswordSchema')
 const { sendVerificationEmail } = require('../services/emailService') // Import the email service
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService') // Import token generation functions
@@ -84,10 +85,42 @@ const registerVendor = async (req, res) => {
   })
 }
 
-const getVendors = async (req, res, next) => {
-  const vendors = await knex('vendors').select('id', 'first_name', 'last_name', 'email', 'phone', 'banner', 'address', 'latitude', 'longitude', 'category', 'business_name', 'is_active', 'verified') // Select only necessary fields
+const getVendorsWithFilter = async (req, res) => {
+  // Validate query parameters using the schema's method
+  const { isValid, message, value } = vendorQuerySchema.validateQuery(req.query)
+  if (!isValid) {
+    return res.status(400).json({ error: message })
+  }
 
-  res.json(vendors) // Send the filtered vendor data
+  const { category, sortBy, order, page, limit } = value
+
+  // Build query
+  let query = knex('vendors')
+
+  // Apply category filter if provided
+  if (category) {
+    query = query.where('category', category)
+  }
+
+  // Apply sorting
+  query = query.orderBy(sortBy, order)
+
+  // Apply pagination
+  query = query.offset((page - 1) * limit).limit(limit)
+
+  // Explicitly select only the required fields (avoid sensitive data like password, etc.)
+  query = query.select('id', 'business_name', 'category', 'email', 'phone', 'address', 'created_at', 'updated_at')
+
+  // Fetch vendors from the database
+  const vendors = await query
+
+  // If no vendors are found, return a 404 error
+  if (vendors.length === 0) {
+    return res.status(404).json({ message: 'No vendors found' })
+  }
+
+  // Respond with the filtered and paginated list of vendors
+  res.json(vendors)
 }
 
 const getVendorById = async (req, res) => {
@@ -274,7 +307,7 @@ const verifyVendorEmail = async (req, res) => {
 
 module.exports = {
   registerVendor,
-  getVendors,
+  getVendorsWithFilter,
   getVendorById,
   updateVendor,
   updateVendorEmail,
