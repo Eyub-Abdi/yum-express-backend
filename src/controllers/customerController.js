@@ -3,6 +3,7 @@ const debug = require('debug')('app')
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
 const { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema } = require('../schemas/customerSchema')
+const { validateId } = require('../utils/validateId')
 const authorizeUser = require('../middleware/authenticateUser')
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
 const { sendVerificationEmail } = require('../services/emailService')
@@ -72,6 +73,11 @@ const getCustomers = async (req, res) => {
 
 const getCustomerById = async (req, res) => {
   const { id } = req.params
+
+  // Validate vendor_id using custom function
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid customer ID' })
+  }
 
   const customer = await knex('customers').select('id', 'first_name', 'last_name', 'email', 'phone').where('id', id).first()
 
