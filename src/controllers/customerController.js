@@ -95,6 +95,11 @@ const updateCustomer = async (req, res) => {
   }
 
   const { id } = req.params
+  // Validate vendor_id using custom function
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid customer ID' })
+  }
+
   const { first_name, last_name, email, phone } = req.body
 
   // Check if customer exists
