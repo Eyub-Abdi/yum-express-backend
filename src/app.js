@@ -1,13 +1,15 @@
 const express = require('express')
+const app = express()
 const debug = require('debug')('app')
 const config = require('../config/default')
-const db = require('./db/knex')
-const app = express()
+
+const cookiePerser = require('cookie-parser')
 const customerRoutes = require('./routes/customerRoutes')
 const vendoRoutes = require('./routes/vendorRoutes')
 const authRoutes = require('./routes/authRoutes')
 const productRoutes = require('./routes/productRoutes')
 const reviewRoutes = require('./routes/reviewRoutes')
+const cartRoutes = require('./routes/cartRoutes')
 
 if (!config.jwt.secret) {
   debug('FATAL ERROR, JWT_SECRET IS NOT SET')
@@ -19,11 +21,14 @@ debug(config.email.user)
 debug(config.email.pass)
 
 app.use(express.json())
+app.use(cookiePerser())
+
 app.use('/api/auth', authRoutes)
 app.use('/api/customers', customerRoutes)
 app.use('/api/vendors', vendoRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/reviews', reviewRoutes)
+app.use('/api/cart', cartRoutes)
 
 app.get('/', (req, res) => res.send('Home'))
 
