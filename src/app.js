@@ -19,6 +19,7 @@ if (!config.jwt.secret) {
 debug(config.db.database)
 debug(config.email.user)
 debug(config.email.pass)
+debug(config.session.secret)
 
 app.use(express.json())
 app.use(cookiePerser())
