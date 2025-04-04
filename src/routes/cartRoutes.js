@@ -4,7 +4,7 @@ const { createCart, addToCart, getCart, updateCartItem } = require('../controlle
 const authOrGuest = require('../middleware/guestMiddleware')
 const verifySessionTokenMiddleware = require('../middleware/verifySessionToken')
 
-router.post('/create-cart', verifySessionTokenMiddleware, authOrGuest, createCart)
+router.post('/create-cart', authOrGuest, createCart)
 router.post('/add-to-cart', authOrGuest, addToCart)
 router.get('/', authOrGuest, getCart)
 router.put('/update-cart-item', updateCartItem)
