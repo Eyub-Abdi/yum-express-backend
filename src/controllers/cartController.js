@@ -8,46 +8,41 @@ const createCart = async (req, res) => {
 
   if (user) {
     // Authenticated user: Check if they already have an active cart
-    const existingCart = await knex('carts')
-      .where({ customer_id: user.id })
-      .andWhere('expires_at', '>', knex.fn.now()) // Ensure it's still valid
-      .first()
+    const existingCart = await knex('carts').where({ customer_id: user.id }).andWhere('expires_at', '>', knex.fn.now()).first()
 
     if (existingCart) {
-      return res.status(200).json({ cart: existingCart }) // Return existing cart
+      return res.status(200).json({ cart: existingCart })
     }
 
     cartData.customer_id = user.id
   } else {
-    // Guest user: Check if they already have an active cart
+    // Guest user
     let existingCart = null
     if (sessionToken) {
       existingCart = await knex('carts').where({ session_token: sessionToken }).andWhere('expires_at', '>', knex.fn.now()).first()
     }
 
     if (existingCart) {
-      return res.status(200).json({ cart: existingCart }) // Return existing cart
+      return res.status(200).json({ cart: existingCart })
     }
 
-    // Generate a session token if not present
+    // Generate session token if not present
     const newSessionToken = sessionToken || generateSessionToken()
     cartData.session_token = newSessionToken
 
-    // Set the token in cookies for future requests
+    // Generate signature for session token
+    const signature = generateSignature(newSessionToken)
+    cartData.signature = signature
+
+    // Set cookie
     res.cookie('session_token', newSessionToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     })
   }
 
-  // Set cart expiration to 7 days from now
   cartData.expires_at = knex.raw("CURRENT_TIMESTAMP + INTERVAL '7 days'")
 
-  // Generate signature for the session token
-  const signature = generateSignature(cartData.session_token)
-  cartData.signature = signature
-
-  // Insert a new cart with signature
   const [cart] = await knex('carts').insert(cartData).returning('*')
 
   return res.status(201).json({ cart })
