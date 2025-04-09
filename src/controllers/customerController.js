@@ -31,7 +31,7 @@ const registerCustomer = async (req, res) => {
 
   // Generate the verification token and expiry time
   const verificationToken = generateVerificationToken()
-  const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 1 hour validity
+  const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 48 hours validity
 
   // Insert the new customer into the database
   const [newCustomer] = await knex('customers')
