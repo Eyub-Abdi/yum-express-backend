@@ -1,7 +1,9 @@
 // controllers/adminController.js
 const knex = require('../db/knex')
 const bcrypt = require('bcrypt')
-const { adminRegistrationSchema } = require('../schemas/adminSchema')
+const { adminRegistrationSchema, updateAdminSchema } = require('../schemas/adminSchema')
+const { validateId } = require('../utils/validateId')
+
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
 const { verifyEmail } = require('../services/emailVerificationService')
 const { sendVerificationEmail } = require('../services/emailService')
@@ -41,8 +43,106 @@ const registerAdmin = async (req, res) => {
   res.status(201).json({ message: 'Admin registered successfully. Please verify your email.' })
 }
 
+const getAllAdmins = async (req, res) => {
+  const admins = await knex('admins').select('id', 'first_name', 'last_name', 'email', 'phone', 'role', 'is_active', 'verified', 'last_login', 'created_at').orderBy('created_at', 'desc')
+
+  res.json({ admins })
+}
+
+const getAdminById = async (req, res) => {
+  const { id } = req.params
+
+  if (!validateId(id)) {
+    return res.status(400).json({ error: 'Invalid admin ID' })
+  }
+
+  const admin = await knex('admins').select('id', 'first_name', 'last_name', 'email', 'phone', 'role', 'is_active', 'verified', 'last_login', 'created_at').where({ id }).first()
+
+  if (!admin) {
+    return res.status(404).json({ error: 'Admin not found' })
+  }
+
+  res.json(admin)
+}
+
+const getAdminProfile = async (req, res) => {
+  // Fetch the admin profile from the database using the authenticated admin's ID
+  const { id } = req.user // this comes from the authenticateUser middleware
+
+  // Get the admin details from the database
+  const admin = await knex('admins').where({ id }).first()
+
+  if (!admin) {
+    return res.status(404).json({ error: 'Admin not found' })
+  }
+
+  // Return the admin's profile (excluding sensitive fields like password)
+  const { password_hash, verification_token, verification_token_expiry, ...adminProfile } = admin
+  res.json({ admin: adminProfile })
+}
+
+const updateAdmin = async (req, res) => {
+  const { error, value } = updateAdminSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message })
+  }
+
+  const { id } = req.params
+
+  // Validate if the id is a valid number
+  if (!validateId(id)) {
+    return res.status(400).json({ error: 'Invalid admin ID' })
+  }
+
+  const { first_name, last_name, phone, role, is_active } = value
+
+  // Ensure admin exists
+  const admin = await knex('admins').where({ id }).first()
+  if (!admin) {
+    return res.status(404).json({ error: 'Admin not found' })
+  }
+
+  // Update the admin details
+  const updatedAdmin = await knex('admins').where({ id }).update({
+    first_name,
+    last_name,
+    phone,
+    role,
+    is_active,
+    updated_at: knex.fn.now()
+  })
+
+  if (!updatedAdmin) {
+    return res.status(400).json({ error: 'Failed to update admin' })
+  }
+
+  // Return the updated admin details (excluding sensitive fields)
+  const adminDetails = await knex('admins').where({ id }).first()
+  const { password_hash, verification_token, verification_token_expiry, ...adminProfile } = adminDetails
+
+  res.json({ message: 'Admin updated successfully', admin: adminProfile })
+}
+
+const deleteAdmin = async (req, res) => {
+  const { id } = req.params
+
+  if (!validateId(id)) {
+    return res.status(400).json({ error: 'Invalid admin ID' })
+  }
+
+  const admin = await knex('admins').where({ id }).first()
+
+  if (!admin) {
+    return res.status(404).json({ error: 'Admin not found' })
+  }
+
+  await knex('admins').where({ id }).del()
+
+  res.json({ message: 'Admin deleted successfully' })
+}
+
 const verifyAdminEmail = async (req, res) => {
   await verifyEmail('admins', req, res)
 }
 
-module.exports = { registerAdmin, verifyAdminEmail }
+module.exports = { registerAdmin, getAllAdmins, getAdminById, getAdminProfile, updateAdmin, deleteAdmin, verifyAdminEmail }

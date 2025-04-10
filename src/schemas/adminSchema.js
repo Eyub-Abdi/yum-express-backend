@@ -19,4 +19,20 @@ const adminLoginSchema = Joi.object({
   password: Joi.string().max(100).required()
 })
 
-module.exports = { adminRegistrationSchema, adminLoginSchema }
+const updateAdminSchema = Joi.object({
+  first_name: Joi.string().min(3).max(100).optional(),
+  last_name: Joi.string().min(3).max(100).optional(),
+  phone: Joi.string()
+    .pattern(/^[\d+()-\s]+$/)
+    .min(10)
+    .max(20)
+    .optional(),
+  role: Joi.string().valid('admin', 'superadmin').optional(),
+  is_active: Joi.boolean().optional()
+}).min(1) // Ensures that at least one field must be provided
+
+const updateAdminEmailSchema = Joi.object({
+  new_email: Joi.string().email().max(255).required()
+})
+
+module.exports = { adminRegistrationSchema, updateAdminSchema, updateAdminEmailSchema, adminLoginSchema }

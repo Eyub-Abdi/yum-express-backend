@@ -1,10 +1,16 @@
 // routes/adminRoutes.js
 const express = require('express')
 const router = express.Router()
-const { registerAdmin, verifyAdminEmail } = require('../controllers/adminController')
+const { registerAdmin, verifyAdminEmail, getAllAdmins, getAdminById, getAdminProfile, updateAdmin, deleteAdmin } = require('../controllers/adminController')
+const authenticateUser = require('../middleware/authenticateUser')
+const { requireAdminRole } = require('../middleware/requireAdminRole')
 
 // POST /admins/register
-router.post('/register', registerAdmin)
+router.post('/register', authenticateUser, requireAdminRole('superadmin'), registerAdmin)
 router.get('/verify-email', verifyAdminEmail)
-
+router.get('/', authenticateUser, requireAdminRole('superadmin'), getAllAdmins)
+router.get('/me', authenticateUser, requireAdminRole('admin'), getAdminProfile)
+router.get('/:id', authenticateUser, requireAdminRole('superadmin'), getAdminById)
+router.put('/:id', authenticateUser, requireAdminRole('superadmin'), updateAdmin)
+router.delete('/:id', authenticateUser, requireAdminRole('superadmin'), deleteAdmin)
 module.exports = router
