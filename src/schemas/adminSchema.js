@@ -14,4 +14,9 @@ const adminRegistrationSchema = Joi.object({
   role: Joi.string().valid('admin', 'superadmin').optional()
 })
 
-module.exports = { adminRegistrationSchema }
+const adminLoginSchema = Joi.object({
+  email: Joi.string().email().max(255).required(),
+  password: Joi.string().max(100).required()
+})
+
+module.exports = { adminRegistrationSchema, adminLoginSchema }
