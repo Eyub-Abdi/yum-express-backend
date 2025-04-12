@@ -2,6 +2,8 @@
 const knex = require('../db/knex')
 const bcrypt = require('bcrypt')
 const { adminRegistrationSchema, updateAdminSchema } = require('../schemas/adminSchema')
+const updatePasswordSchema = require('../schemas/updatePasswordSchema')
+
 const { validateId } = require('../utils/validateId')
 
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
@@ -141,8 +143,34 @@ const deleteAdmin = async (req, res) => {
   res.json({ message: 'Admin deleted successfully' })
 }
 
+const updateAdminPassword = async (req, res) => {
+  const { error } = updatePasswordSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message })
+  }
+
+  const { old_password, new_password } = req.body
+  const { id } = req.user
+
+  const admin = await knex('admins').where({ id }).first()
+  if (!admin) {
+    return res.status(404).json({ error: 'Admin not found' })
+  }
+
+  const isPasswordValid = await bcrypt.compare(old_password, admin.password_hash)
+  if (!isPasswordValid) {
+    return res.status(401).json({ error: 'Old password is incorrect' })
+  }
+
+  const hashedPassword = await bcrypt.hash(new_password, 10)
+
+  await knex('admins').where({ id }).update({ password_hash: hashedPassword, updated_at: knex.fn.now() })
+
+  res.json({ message: 'Password updated successfully' })
+}
+
 const verifyAdminEmail = async (req, res) => {
   await verifyEmail('admins', req, res)
 }
 
-module.exports = { registerAdmin, getAllAdmins, getAdminById, getAdminProfile, updateAdmin, deleteAdmin, verifyAdminEmail }
+module.exports = { registerAdmin, getAllAdmins, getAdminById, getAdminProfile, updateAdmin, deleteAdmin, updateAdminPassword, verifyAdminEmail }
