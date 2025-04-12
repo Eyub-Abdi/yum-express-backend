@@ -14,7 +14,8 @@ const checkoutRoutes = require('./routes/checkoutRoute')
 const orderRoutes = require('./routes/orderRoutes')
 const salesRoutes = require('./routes/salesRoutes')
 const adminRoutes = require('./routes/adminRoutes')
-const adminProductRoutes = require('./routes/adminProductRoutes')
+const productRoutesForAdmin = require('./routes/productRoutesForAdmin')
+const vendorRoutesForAdmin = require('./routes/vendorRoutesForAdmin')
 
 if (!config.jwt.secret) {
   debug('FATAL ERROR, JWT_SECRET IS NOT SET')
@@ -39,7 +40,8 @@ app.use('/api/checkout', checkoutRoutes)
 app.use('/api/order', orderRoutes)
 app.use('/api/sales', salesRoutes)
 app.use('/api/admins', adminRoutes)
-app.use('/api/admin-products', adminProductRoutes)
+app.use('/api/admin-products', productRoutesForAdmin)
+app.use('/api/admin-vendors', vendorRoutesForAdmin)
 
 app.get('/', (req, res) => res.send('Home'))
 

@@ -1,7 +1,7 @@
 const knex = require('../db/knex')
 const { adminProductQuerySchema } = require('../schemas/adminProductQuerySchema')
 
-const getAllProducts = async (req, res) => {
+const getAllProductsForAdmin = async (req, res) => {
   const { error, value } = adminProductQuerySchema.validate(req.query)
 
   if (error) {
@@ -75,4 +75,4 @@ const getAllProducts = async (req, res) => {
   })
 }
 
-module.exports = { getAllProducts }
+module.exports = { getAllProductsForAdmin }
