@@ -63,7 +63,7 @@ const checkoutCart = async (req, res) => {
         customer_id: cart.customer_id,
         total_price: totalPrice,
         payment_status: 'pending', // Set payment_status to 'pending'
-        order_status: 'pending', // Set order_status to 'pending'
+        order_status: 'processing', // Set order_status to 'processing'
         created_at: knex.fn.now(),
         updated_at: knex.fn.now()
       })
