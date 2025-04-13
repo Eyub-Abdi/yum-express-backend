@@ -1,0 +1,73 @@
+const knex = require('../db/knex')
+const bcrypt = require('bcrypt')
+const { driverRegistrationSchema } = require('../schemas/driverSchema')
+const { sendVerificationEmail } = require('../services/emailService')
+const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
+const { verifyEmail } = require('../services/emailVerificationService')
+
+const registerDriver = async (req, res) => {
+  const { error } = driverRegistrationSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message })
+  }
+
+  const { first_name, last_name, email, phone, password, vehicle_details, status = 'active', is_active = true } = req.body
+
+  // Check if the driver already exists by email or phone number
+  const existingDriver = await knex('drivers').where('email', email).orWhere('phone', phone).first()
+
+  if (existingDriver) {
+    return res.status(400).json({
+      message: 'Driver with this email or phone number already exists.'
+    })
+  }
+
+  // Hash the password directly using bcrypt
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  // Generate the verification token and expiry time
+  const verificationToken = generateVerificationToken()
+  const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 48 hours validity
+
+  // Get the current time for created_at
+  const currentTime = new Date().toISOString()
+
+  // Insert the new driver into the database
+  const [newDriver] = await knex('drivers')
+    .insert({
+      first_name,
+      last_name,
+      email,
+      phone,
+      vehicle_details,
+      password_hash: hashedPassword,
+      verification_token: verificationToken,
+      verification_token_expiry: verificationTokenExpiry,
+      status, // Set status (active by default)
+      is_active, // Active status (default is true)
+      created_at: currentTime
+    })
+    .returning('*')
+
+  // Send the verification email
+  await sendVerificationEmail(email, first_name, verificationToken, 'drivers')
+
+  return res.status(201).json({
+    message: 'Driver registered successfully!',
+    driver: {
+      id: newDriver.id,
+      first_name: newDriver.first_name,
+      last_name: newDriver.last_name,
+      email: newDriver.email,
+      phone: newDriver.phone,
+      status: newDriver.status,
+      is_active: newDriver.is_active
+    }
+  })
+}
+
+const verifyDriverEmail = async (req, res) => {
+  verifyEmail('drivers', req, res)
+}
+
+module.exports = { registerDriver,verifyDriverEmail }
