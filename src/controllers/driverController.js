@@ -1,6 +1,8 @@
 const knex = require('../db/knex')
 const bcrypt = require('bcrypt')
 const { driverRegistrationSchema } = require('../schemas/driverSchema')
+const { validateId } = require('../utils/validateId')
+
 const { sendVerificationEmail } = require('../services/emailService')
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
 const { verifyEmail } = require('../services/emailVerificationService')
@@ -66,8 +68,47 @@ const registerDriver = async (req, res) => {
   })
 }
 
+const getDriverById = async (req, res) => {
+  const { id } = req.params
+
+  if (!validateId(id)) {
+    return res.status(400).json({ error: 'Invalid driver ID' })
+  }
+
+  const driver = await knex('drivers').where({ id }).first()
+
+  if (!driver) {
+    return res.status(404).json({ message: 'Driver not found' })
+  }
+
+  res.json({
+    id: driver.id,
+    first_name: driver.first_name,
+    last_name: driver.last_name,
+    email: driver.email,
+    phone: driver.phone,
+    vehicle_details: driver.vehicle_details,
+    status: driver.status,
+    is_active: driver.is_active,
+    created_at: driver.created_at,
+    updated_at: driver.updated_at
+  })
+}
+
+const getDriverProfile = async (req, res) => {
+  const driverId = req.user.id
+
+  const driver = await knex('drivers').select('id', 'first_name', 'last_name', 'email', 'phone', 'vehicle_details', 'status', 'is_active', 'created_at', 'updated_at').where({ id: driverId }).first()
+
+  if (!driver) {
+    return res.status(404).json({ message: 'Driver not found' })
+  }
+
+  res.json({ driver })
+}
+
 const verifyDriverEmail = async (req, res) => {
   verifyEmail('drivers', req, res)
 }
 
-module.exports = { registerDriver,verifyDriverEmail }
+module.exports = { registerDriver, getDriverById, getDriverProfile, verifyDriverEmail }
