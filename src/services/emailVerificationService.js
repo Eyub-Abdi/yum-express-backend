@@ -1,7 +1,7 @@
 const knex = require('../db/knex')
 
 // List of valid entities
-const validEntities = ['vendors', 'customers', 'admins']
+const validEntities = ['vendors', 'customers', 'drivers', 'admins']
 
 // Reusable verification logic
 const verifyEmail = async (entity, req, res) => {
@@ -31,7 +31,8 @@ const verifyEmail = async (entity, req, res) => {
     updated_at: new Date()
   })
 
-  return res.json({ message: 'Email verified successfully!' })
+  // return res.json({ message: 'Email verified successfully!' })
+  return res.redirect(`http://127.0.0.1:5000/`)
 }
 
 module.exports = { verifyEmail }
