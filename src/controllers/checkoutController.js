@@ -62,7 +62,8 @@ const checkoutCart = async (req, res) => {
       .insert({
         customer_id: cart.customer_id,
         total_price: totalPrice,
-        status: 'pending',
+        payment_status: 'pending', // Set payment_status to 'pending'
+        order_status: 'pending', // Set order_status to 'pending'
         created_at: knex.fn.now(),
         updated_at: knex.fn.now()
       })
@@ -115,7 +116,7 @@ const checkoutCart = async (req, res) => {
 
       // Update order status to paid
       await trx('orders').where({ id: order.id }).update({
-        status: 'paid',
+        payment_status: 'paid',
         updated_at: knex.fn.now()
       })
 
