@@ -107,8 +107,60 @@ const getDriverProfile = async (req, res) => {
   res.json({ driver })
 }
 
+const deleteDriver = async (req, res) => {
+  const { id } = req.params
+  const adminId = req.user.id
+
+  // Validate the driver ID
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid driver ID' })
+  }
+
+  // Check if driver exists and is not already deleted
+  const driver = await knex('drivers').where({ id }).first()
+  if (!driver) {
+    return res.status(404).json({ message: 'Driver not found' })
+  }
+
+  if (driver.deleted_at) {
+    return res.status(400).json({ message: 'Driver already deleted' })
+  }
+
+  // Perform soft delete
+  await knex('drivers').where({ id }).update({
+    deleted_at: new Date(),
+    deleted_by: adminId
+  })
+
+  return res.json({ message: 'Driver deleted successfully (soft delete)' })
+}
+
+const recoverDriver = async (req, res) => {
+  const { id } = req.params
+
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid driver ID' })
+  }
+
+  const driver = await knex('drivers').where({ id }).first()
+  if (!driver) {
+    return res.status(404).json({ message: 'Driver not found' })
+  }
+
+  if (!driver.deleted_at) {
+    return res.status(400).json({ message: 'Driver is not deleted' })
+  }
+
+  await knex('drivers').where({ id }).update({
+    deleted_at: null,
+    deleted_by: null
+  })
+
+  return res.json({ message: 'Driver recovered successfully' })
+}
+
 const verifyDriverEmail = async (req, res) => {
   verifyEmail('drivers', req, res)
 }
 
-module.exports = { registerDriver, getDriverById, getDriverProfile, verifyDriverEmail }
+module.exports = { registerDriver, getDriverById, getDriverProfile, deleteDriver, recoverDriver, verifyDriverEmail }
