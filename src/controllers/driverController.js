@@ -1,6 +1,6 @@
 const knex = require('../db/knex')
 const bcrypt = require('bcrypt')
-const { driverRegistrationSchema } = require('../schemas/driverSchema')
+const { driverRegistrationSchema, driverQuerySchema } = require('../schemas/driverSchema')
 const { validateId } = require('../utils/validateId')
 
 const { sendVerificationEmail } = require('../services/emailService')
@@ -65,6 +65,38 @@ const registerDriver = async (req, res) => {
       status: newDriver.status,
       is_active: newDriver.is_active
     }
+  })
+}
+
+const getAllDrivers = async (req, res) => {
+  const { error, value } = driverQuerySchema.validate(req.query)
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message })
+  }
+
+  const { page, limit, search, sort_by, order } = value
+  const offset = (page - 1) * limit
+
+  const baseQuery = knex('drivers')
+    .whereNull('deleted_at')
+    .modify(qb => {
+      if (search) {
+        qb.andWhere(builder => {
+          builder.whereILike('first_name', `%${search}%`).orWhereILike('last_name', `%${search}%`).orWhereILike('email', `%${search}%`).orWhereILike('phone', `%${search}%`)
+        })
+      }
+    })
+
+  const totalQuery = baseQuery.clone().count('* as count').first()
+  const dataQuery = baseQuery.clone().select('id', 'first_name', 'last_name', 'email', 'phone', 'vehicle_details', 'status', 'is_active', 'created_at', 'updated_at').orderBy(sort_by, order).limit(limit).offset(offset)
+
+  const [totalResult, drivers] = await Promise.all([totalQuery, dataQuery])
+
+  res.json({
+    total: totalResult.count,
+    page,
+    limit,
+    drivers
   })
 }
 
@@ -163,4 +195,4 @@ const verifyDriverEmail = async (req, res) => {
   verifyEmail('drivers', req, res)
 }
 
-module.exports = { registerDriver, getDriverById, getDriverProfile, deleteDriver, recoverDriver, verifyDriverEmail }
+module.exports = { registerDriver, getAllDrivers, getDriverById, getDriverProfile, deleteDriver, recoverDriver, verifyDriverEmail }

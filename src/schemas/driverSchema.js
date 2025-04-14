@@ -9,4 +9,12 @@ const driverRegistrationSchema = Joi.object({
   password: Joi.string().min(6).max(100).required()
 })
 
-module.exports = { driverRegistrationSchema }
+const driverQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+  search: Joi.string().allow('', null).default(''),
+  sort_by: Joi.string().valid('first_name', 'last_name', 'email', 'phone', 'created_at', 'updated_at').default('created_at'),
+  order: Joi.string().valid('asc', 'desc').default('desc')
+})
+
+module.exports = { driverRegistrationSchema, driverQuerySchema }
