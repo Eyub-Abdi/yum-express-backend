@@ -75,7 +75,7 @@ const getDriverById = async (req, res) => {
     return res.status(400).json({ error: 'Invalid driver ID' })
   }
 
-  const driver = await knex('drivers').where({ id }).first()
+  const driver = await knex('drivers').where({ id }).whereNull('deleted_at').first()
 
   if (!driver) {
     return res.status(404).json({ message: 'Driver not found' })
