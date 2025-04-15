@@ -2,14 +2,6 @@ const knex = require('../db/knex')
 const { checkoutSchema } = require('../schemas/checkoutSchema')
 const { processPayment } = require('../services/paymentService')
 
-// Helper to get current week number (used for vendor payment tracking)
-Date.prototype.getWeek = function () {
-  const onejan = new Date(this.getFullYear(), 0, 1)
-  const today = new Date(this.getFullYear(), this.getMonth(), this.getDate())
-  const dayOfYear = Math.floor((today - onejan + 86400000) / 86400000)
-  return Math.ceil(dayOfYear / 7)
-}
-
 const checkoutCart = async (req, res) => {
   // Validate request body
   const { error } = checkoutSchema.validate(req.body)
@@ -29,14 +21,7 @@ const checkoutCart = async (req, res) => {
   }
 
   // Get cart items with product info
-  const items = await knex('cart_items').where({ cart_id }).join('products', 'cart_items.product_id', 'products.id').select(
-    'cart_items.product_id',
-    'cart_items.quantity',
-    'products.stock',
-    'products.price',
-    'products.name',
-    'products.vendor_id' // Needed for vendor_orders
-  )
+  const items = await knex('cart_items').where({ cart_id }).join('products', 'cart_items.product_id', 'products.id').select('cart_items.product_id', 'cart_items.quantity', 'products.price', 'products.name', 'products.vendor_id')
 
   if (!items.length) {
     return res.status(400).json({ error: 'Cart is empty' })
@@ -61,11 +46,11 @@ const checkoutCart = async (req, res) => {
     const [order] = await trx('orders')
       .insert({
         customer_id: cart.customer_id,
+        vendor_id: items[0].vendor_id, // Single vendor for the cart
         total_price: totalPrice,
-        payment_status: 'pending', // Set payment_status to 'pending'
-        order_status: 'processing', // Set order_status to 'processing'
-        created_at: knex.fn.now(),
-        updated_at: knex.fn.now()
+        payment_status: 'pending',
+        order_status: 'processing',
+        created_at: knex.fn.now()
       })
       .returning('*')
 
@@ -78,27 +63,6 @@ const checkoutCart = async (req, res) => {
       created_at: knex.fn.now()
     }))
     await trx('order_items').insert(orderItems)
-
-    // Group items by vendor to prepare vendor_orders
-    const vendorTotals = {}
-    for (const item of items) {
-      const vendorId = item.vendor_id
-      const itemTotal = item.price * item.quantity
-      vendorTotals[vendorId] = (vendorTotals[vendorId] || 0) + itemTotal
-    }
-
-    // Insert into vendor_orders table for each vendor
-    const currentWeek = new Date().getWeek()
-    for (const [vendorId, vendorPrice] of Object.entries(vendorTotals)) {
-      await trx('vendor_orders').insert({
-        order_id: order.id,
-        vendor_id: vendorId,
-        vendor_price: vendorPrice,
-        payment_week: currentWeek,
-        created_at: knex.fn.now(),
-        updated_at: knex.fn.now()
-      })
-    }
 
     // Process payment before committing
     const paymentResult = await processPayment(totalPrice, cart.customer_id)
@@ -139,11 +103,11 @@ const checkoutCart = async (req, res) => {
       })
     } else {
       await trx.rollback()
-      return res.status(500).json({ error: 'Payment failed' })
+      throw new Error('Payment failed')
     }
   } catch (err) {
     await trx.rollback()
-    return res.status(500).json({ error: 'Checkout failed', details: err.message })
+    throw err // Let the global error handler catch and log this error
   }
 }
 
