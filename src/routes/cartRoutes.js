@@ -7,5 +7,5 @@ const verifySessionTokenMiddleware = require('../middleware/verifySessionToken')
 router.post('/create-cart', authOrGuest, createCart)
 router.post('/add-to-cart', authOrGuest, clearAndAddToCart)
 router.get('/', authOrGuest, getCart)
-router.put('/update-cart-item', updateCartItem)
+router.put('/update-cart-items', authOrGuest, updateCartItem)
 module.exports = router

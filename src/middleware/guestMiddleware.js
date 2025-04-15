@@ -16,7 +16,7 @@ const authOrGuest = async (req, res, next) => {
 
         if (guestCart) {
           // Update the cart with the authenticated user ID
-          await knex('carts').where({ session_token: sessionToken }).update({ customer_id: req.user.id, session_token: null, signature: 0 })
+          await knex('carts').where({ session_token: sessionToken }).update({ customer_id: req.user.id, session_token: null, signature: null })
 
           // Optionally, clear the session token cookie
           res.clearCookie('session_token')

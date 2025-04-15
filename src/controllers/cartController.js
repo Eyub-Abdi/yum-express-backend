@@ -125,42 +125,37 @@ const getCart = async (req, res) => {
 
 const updateCartItem = async (req, res) => {
   const { cart_id, product_id, quantity } = req.body
+  const { sessionToken, user } = req
 
-  // Validate input using the new update schema
+  // Validate input
   const { error } = cartItemUpdateSchema.validate(req.body)
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message })
-  }
+  if (error) return res.status(400).json({ error: error.details[0].message })
+
+  // Verify cart ownership
+  const cart = user ? await knex('carts').where({ id: cart_id, customer_id: user.id }).first() : await knex('carts').where({ id: cart_id, session_token: sessionToken }).first()
+
+  if (!cart) return res.status(404).json({ error: 'Cart not found' })
 
   // Check if the cart item exists
   const existingItem = await knex('cart_items').where({ cart_id, product_id }).first()
-  if (!existingItem) {
-    return res.status(404).json({ error: 'Cart item not found' })
-  }
+  if (!existingItem) return res.status(404).json({ error: 'Cart item not found' })
 
-  // Check product stock (if quantity is not 0)
   if (quantity > 0) {
     const product = await knex('products').where({ id: product_id }).first()
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' })
-    }
+    if (!product) return res.status(404).json({ error: 'Product not found' })
+    if (quantity > product.stock) return res.status(400).json({ error: 'Not enough stock available' })
 
-    // Ensure quantity does not exceed stock
-    if (quantity > product.stock) {
-      return res.status(400).json({ error: 'Not enough stock available' })
-    }
+    await knex('cart_items').where({ cart_id, product_id }).update({
+      quantity,
+      updated_at: knex.fn.now()
+    })
+
+    return res.status(200).json({ message: 'Cart item updated successfully' })
   }
 
-  // If quantity is 0, remove the item from the cart
-  if (quantity === 0) {
-    await knex('cart_items').where({ cart_id, product_id }).del()
-    return res.status(200).json({ message: 'Cart item removed successfully' })
-  }
-
-  // Otherwise, update the cart item quantity
-  await knex('cart_items').where({ cart_id, product_id }).update({ quantity, updated_at: knex.fn.now() })
-
-  return res.status(200).json({ message: 'Cart item updated successfully' })
+  // Quantity is 0, remove item
+  await knex('cart_items').where({ cart_id, product_id }).del()
+  return res.status(200).json({ message: 'Cart item removed successfully' })
 }
 
 module.exports = { createCart, clearAndAddToCart, getCart, updateCartItem }
