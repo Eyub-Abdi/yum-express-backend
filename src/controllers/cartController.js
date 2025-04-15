@@ -48,26 +48,42 @@ const createCart = async (req, res) => {
   return res.status(201).json({ cart })
 }
 
-const addToCart = async (req, res) => {
-  const { cart_id, product_id, quantity } = req.body
+const clearAndAddToCart = async (req, res) => {
+  const { cart_id, product_id, quantity, force = false } = req.body
   const { sessionToken, user } = req
 
   // Validate input
-  const { error } = cartItemSchema.validate(req.body)
+  const { error } = cartItemSchema.validate({ cart_id, product_id, quantity })
   if (error) return res.status(400).json({ error: error.details[0].message })
 
   // Fetch cart and verify ownership
   const cart = user ? await knex('carts').where({ id: cart_id, customer_id: user.id }).first() : await knex('carts').where({ id: cart_id, session_token: sessionToken }).first()
 
-  if (!cart) return res.status(404).json({ error: 'Cart not found' + sessionToken })
+  if (!cart) return res.status(404).json({ error: 'Cart not found' })
 
-  // Product validation
-  const product = await knex('products').where({ id: product_id }).first()
+  // Fetch product and its vendor
+  const product = await knex('products').join('vendors', 'products.vendor_id', 'vendors.id').select('products.*', 'vendors.id as vendor_id', 'vendors.business_name as vendor_name').where('products.id', product_id).first()
+
   if (!product) return res.status(404).json({ error: 'Product not found' })
-
   if (quantity > product.stock) return res.status(400).json({ error: 'Not enough stock available' })
 
-  // Check if item already exists
+  // Check if cart already contains items from a different vendor
+  const cartItems = await knex('cart_items').join('products', 'cart_items.product_id', 'products.id').join('vendors', 'products.vendor_id', 'vendors.id').where('cart_items.cart_id', cart.id).select('products.vendor_id', 'vendors.business_name as vendor_name')
+
+  const conflictingItem = cartItems.find(item => item.vendor_id !== product.vendor_id)
+
+  if (conflictingItem && !force) {
+    return res.status(409).json({
+      message: `This will clear your cart from another vendor (${conflictingItem.vendor_name}). Proceed?`,
+      vendorConflict: true
+    })
+  }
+
+  if (conflictingItem && force) {
+    await knex('cart_items').where({ cart_id }).del()
+  }
+
+  // Check if product already exists in the cart (after clear, or no conflict)
   const existingItem = await knex('cart_items').where({ cart_id, product_id }).first()
 
   if (existingItem) {
@@ -79,9 +95,10 @@ const addToCart = async (req, res) => {
     return res.status(200).json({ message: 'Cart updated successfully' })
   }
 
+  // Insert new item
   await knex('cart_items').insert({ cart_id, product_id, quantity })
 
-  return res.status(201).json({ message: 'Item added to cart' })
+  return res.status(200).json({ message: 'Item added to cart' })
 }
 
 const getCart = async (req, res) => {
@@ -146,4 +163,4 @@ const updateCartItem = async (req, res) => {
   return res.status(200).json({ message: 'Cart item updated successfully' })
 }
 
-module.exports = { createCart, addToCart, getCart, updateCartItem }
+module.exports = { createCart, clearAndAddToCart, getCart, updateCartItem }

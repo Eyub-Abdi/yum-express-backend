@@ -18,7 +18,8 @@ const cartItemSchema = Joi.object({
     'number.integer': 'quantity must be an integer',
     'number.min': 'quantity must be at least 1',
     'any.required': 'quantity is required'
-  })
+  }),
+  force: Joi.boolean()
 })
 
 const cartItemUpdateSchema = Joi.object({
