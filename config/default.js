@@ -15,5 +15,8 @@ module.exports = {
   email: {
     user: process.env.MAIL_USER, // Email address
     pass: process.env.APP_PASS
+  },
+  payment: {
+    secret: process.env.PAYMENT_API_KEY
   }
 }

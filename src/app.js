@@ -28,6 +28,7 @@ debug(config.db.database)
 debug(config.email.user)
 debug(config.email.pass)
 debug(config.session.secret)
+debug(config.payment.secret)
 
 app.use(express.json())
 app.use(cookiePerser())
