@@ -17,6 +17,7 @@ module.exports = {
     pass: process.env.APP_PASS
   },
   payment: {
-    secret: process.env.PAYMENT_API_KEY
+    clientId: process.env.PAYMENT_CLIENT_ID,
+    apiKey: process.env.PAYMENT_API_KEY
   }
 }
