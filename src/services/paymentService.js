@@ -1,31 +1,53 @@
-// Simulate a payment process
-const processPayment = async (totalPrice, customerId) => {
-  // Simulate a delay for payment processing (e.g., network request to payment gateway)
-  await new Promise(resolve => setTimeout(resolve, 2000))
+const axios = require('axios')
+const { getToken } = require('./clickpesaTokenManager')
 
-  // Simulate random success or failure
-  const isSuccess = Math.random() > 0.2 // 80% chance of success
+const processPayment = async (totalPrice, phoneNumber, orderReference) => {
+  const token = await getToken()
 
-  if (isSuccess) {
-    // Simulate successful payment details
-    const transactionId = `txn_${Math.floor(Math.random() * 1000000000)}` // Example transaction ID
-    const paymentMethod = 'Credit Card' // Example payment method (this would be dynamic based on the payment method chosen)
+  const res = await axios.post(
+    'https://api.clickpesa.com/third-parties/payments/initiate-ussd-push-request',
+    {
+      amount: totalPrice.toString(),
+      currency: 'TZS',
+      orderReference,
+      phoneNumber
+    },
+    {
+      headers: {
+        Authorization: `${token}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  )
 
+  const data = res.data
+
+  if (data?.status === 'PENDING') {
     return {
-      success: true,
-      message: 'Payment successful',
-      transaction_id: transactionId,
-      payment_method: paymentMethod,
+      success: null, // payment still in progress
+      message: 'USSD push sent. Awaiting user confirmation.',
+      transaction_id: data.transactionId || null,
+      payment_method: 'USSD',
       amount: totalPrice
     }
-  } else {
+  }
+
+  if (data?.status === 'FAILED') {
     return {
       success: false,
-      message: 'Payment failed. Try again later.',
+      message: 'Payment was rejected by the user.',
       transaction_id: null,
       payment_method: null,
       amount: 0
     }
+  }
+
+  return {
+    success: false,
+    message: 'Payment initiation failed.',
+    transaction_id: null,
+    payment_method: null,
+    amount: 0
   }
 }
 
