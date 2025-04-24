@@ -1,6 +1,7 @@
 const knex = require('../db/knex')
 const { checkoutSchema } = require('../schemas/checkoutSchema')
 const { processPayment } = require('../services/paymentService')
+const { processCreditCardPayment } = require('../services/creditCardPaymentService') // We'll create this
 
 const checkoutCart = async (req, res) => {
   // Validate request body
@@ -9,7 +10,7 @@ const checkoutCart = async (req, res) => {
     return res.status(400).json({ error: error.details[0].message })
   }
 
-  const { cart_id } = req.body
+  const { cart_id, payment_method, phone_number: phoneNumber, card_number, card_expiry, card_cvc } = req.body
 
   // Check if cart exists
   const cart = await knex('carts').where({ id: cart_id }).first()
@@ -64,8 +65,17 @@ const checkoutCart = async (req, res) => {
     }))
     await trx('order_items').insert(orderItems)
 
-    // Process payment before committing
-    const paymentResult = await processPayment(totalPrice, cart.customer_id)
+    // Process payment based on the payment method
+    let paymentResult
+    if (payment_method === 'mobile') {
+      // Process payment via mobile method
+      paymentResult = await processPayment(totalPrice, phoneNumber, order.id)
+    } else if (payment_method === 'creditcard') {
+      // Process payment via credit card method
+      paymentResult = await processCreditCardPayment(totalPrice, card_number, card_expiry, card_cvc, order.id)
+    } else {
+      throw new Error('Invalid payment method selected')
+    }
 
     if (paymentResult.success) {
       // Record payment
@@ -103,7 +113,7 @@ const checkoutCart = async (req, res) => {
       })
     } else {
       await trx.rollback()
-      throw new Error('Payment failed')
+      throw new Error(paymentResult.message || 'Payment failed')
     }
   } catch (err) {
     await trx.rollback()
