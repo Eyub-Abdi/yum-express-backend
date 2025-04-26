@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const debug = require('debug')('app')
 const config = require('../config/default')
+const { sendOrderConfirmationSMS } = require('./services/smsService')
 
 const cookiePerser = require('cookie-parser')
 const customerRoutes = require('./routes/customerRoutes')
@@ -30,6 +31,9 @@ debug(config.email.pass)
 debug(config.session.secret)
 debug(config.payment.clientId)
 debug(config.payment.apiKey)
+debug(config.sms.accountSid)
+debug(config.sms.authToken)
+debug(config.sms.phoneNumber)
 
 app.use(express.json())
 app.use(cookiePerser())
@@ -49,7 +53,12 @@ app.use('/api/admin-products', productRoutesForAdmin)
 app.use('/api/admin-vendors', vendorRoutesForAdmin)
 app.use('/api/admin-orders', adminOrderRoutes)
 
-app.get('/', (req, res) => res.send('Home'))
+app.get('/', async (req, res) => {
+  const message = 'Thank you for your order! 🎉 Your delivery is being prepared.'
 
+  await sendOrderConfirmationSMS('+255657777687', message)
+  res.status(200).json({ message: 'Order confirmed and SMS sent.' })
+})
+const twilioNumber = '+16088798587'
 const port = process.env.PORT || 5000
 app.listen(port, () => debug(`Listening on port ${port}...`))
