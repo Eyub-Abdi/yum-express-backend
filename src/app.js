@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 const debug = require('debug')('app')
+const cors = require('cors')
 const config = require('../config/default')
 const { sendOrderConfirmationSMS } = require('./services/smsService')
 
@@ -37,6 +38,7 @@ debug(config.sms.phoneNumber)
 
 app.use(express.json())
 app.use(cookiePerser())
+app.use(cors())
 
 app.use('/api/auth', authRoutes)
 app.use('/api/customers', customerRoutes)
