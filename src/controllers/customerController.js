@@ -54,7 +54,7 @@ const registerCustomer = async (req, res) => {
   }
 
   return res.status(201).json({
-    message: 'Customer registered successfully!',
+    message: 'Customer registered successfully! Please verify your email address',
     customer: {
       id: newCustomer.id,
       first_name: newCustomer.first_name,
