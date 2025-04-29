@@ -111,7 +111,7 @@ const getVendorsWithFilter = async (req, res) => {
   query = query.offset((page - 1) * limit).limit(limit)
 
   // Explicitly select only the required fields (avoid sensitive data like password, etc.)
-  query = query.select('id', 'business_name', 'category', 'email', 'phone', 'address', 'created_at', 'updated_at')
+  query = query.select('id', 'business_name', 'category', 'banner', 'email', 'phone', 'address', 'created_at', 'updated_at')
 
   // Fetch vendors from the database
   const vendors = await query
