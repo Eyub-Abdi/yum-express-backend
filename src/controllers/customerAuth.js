@@ -29,7 +29,17 @@ const loginCustomer = async (req, res) => {
   // Generate JWT token
   const token = jwt.sign({ id: customer.id, type: 'customer' }, config.jwt.secret, { expiresIn: config.jwt.expiresIn })
 
-  res.json({ message: 'Login successful', token })
+  res.json({
+    message: 'Login successful',
+    token,
+    user: {
+      id: customer.id,
+      email: customer.email,
+      first_name: customer.first_name,
+      last_name: customer.last_name,
+      type: 'customer'
+    }
+  })
 }
 
 module.exports = { loginCustomer }
