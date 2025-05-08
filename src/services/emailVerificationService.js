@@ -31,8 +31,8 @@ const verifyEmail = async (entity, req, res) => {
     updated_at: new Date()
   })
 
-  // return res.json({ message: 'Email verified successfully!' })
-  return res.redirect(`http://127.0.0.1:5000/`)
+  return res.json({ message: 'Email verified successfully!' })
+  // return res.redirect(`http://127.0.0.1:5000/`)
 }
 
 module.exports = { verifyEmail }
