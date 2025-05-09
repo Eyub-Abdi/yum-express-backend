@@ -118,7 +118,14 @@ const getCart = async (req, res) => {
   }
 
   // Fetch cart items with product details
-  const cartItems = await knex('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id').select('cart_items.id', 'cart_items.product_id', 'cart_items.quantity', 'products.name', 'products.price')
+  const cartItems = await knex('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id').select(
+    'cart_items.id',
+    'cart_items.product_id',
+    'cart_items.quantity',
+    'products.name',
+    'products.price',
+    'products.image_url' // Include image_url here
+  )
 
   return res.status(200).json({ cart, items: cartItems })
 }
