@@ -123,6 +123,7 @@ const getCart = async (req, res) => {
     'cart_items.product_id',
     'cart_items.quantity',
     'products.name',
+    'products.vendor_id',
     'products.price',
     'products.image_url' // Include image_url here
   )
