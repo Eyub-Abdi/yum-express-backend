@@ -41,4 +41,22 @@ const cartItemUpdateSchema = Joi.object({
   })
 })
 
-module.exports = { cartItemSchema, cartItemUpdateSchema }
+const updateCartItemsSchema = Joi.object({
+  cart_id: Joi.number().required(),
+  items: Joi.array()
+    .items(
+      Joi.object({
+        product_id: Joi.number().required(),
+        quantity: Joi.number().integer().min(1).required()
+      })
+    )
+    .min(1)
+    .required()
+})
+
+const cartItemRemoveSchema = Joi.object({
+  cart_id: Joi.number().integer().positive().required(),
+  product_id: Joi.number().integer().positive().required()
+})
+
+module.exports = { cartItemSchema, cartItemUpdateSchema, updateCartItemsSchema, cartItemRemoveSchema }

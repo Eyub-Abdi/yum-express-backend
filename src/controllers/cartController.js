@@ -1,6 +1,6 @@
 const knex = require('../db/knex')
 const { generateSessionToken, generateSignature } = require('../utils/generateSessionToken')
-const { cartItemSchema, cartItemUpdateSchema } = require('../schemas/cartItemSchema') // Import Joi schema from schemas directory
+const { cartItemSchema, cartItemUpdateSchema, cartItemRemoveSchema, updateCartItemsSchema } = require('../schemas/cartItemSchema') // Import Joi schema from schemas directory
 
 const createCart = async (req, res) => {
   const { sessionToken, user } = req
@@ -53,7 +53,7 @@ const clearAndAddToCart = async (req, res) => {
   const { sessionToken, user } = req
 
   // Validate input
-  const { error } = cartItemSchema.validate({ cart_id, product_id, quantity })
+  const { error } = cartItemSchema.validate(req.body)
   if (error) return res.status(400).json({ error: error.details[0].message })
 
   // Fetch cart and verify ownership
@@ -101,34 +101,71 @@ const clearAndAddToCart = async (req, res) => {
   return res.status(200).json({ message: 'Item added to cart' })
 }
 
+// const getCart = async (req, res) => {
+//   const { sessionToken, user } = req
+//   let cart
+
+//   if (user) {
+//     // Authenticated user: Get their active cart
+//     cart = await knex('carts').where({ customer_id: user.id }).andWhere('expires_at', '>', knex.fn.now()).first()
+//   } else if (sessionToken) {
+//     // Guest user: Get their active cart
+//     cart = await knex('carts').where({ session_token: sessionToken }).andWhere('expires_at', '>', knex.fn.now()).first()
+//   }
+
+//   if (!cart) {
+//     return res.status(200).json({ cart: null, items: [] }) // Return empty cart
+//   }
+
+//   // Fetch cart items with product details
+//   const cartItems = await knex('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id').select(
+//     'cart_items.id',
+//     'cart_items.product_id',
+//     'cart_items.quantity',
+//     'products.name',
+//     'products.vendor_id',
+//     'products.price',
+//     'products.image_url' // Include image_url here
+//   )
+
+//   return res.status(200).json({ cart, items: cartItems })
+// }
+
 const getCart = async (req, res) => {
   const { sessionToken, user } = req
   let cart
 
   if (user) {
-    // Authenticated user: Get their active cart
     cart = await knex('carts').where({ customer_id: user.id }).andWhere('expires_at', '>', knex.fn.now()).first()
   } else if (sessionToken) {
-    // Guest user: Get their active cart
     cart = await knex('carts').where({ session_token: sessionToken }).andWhere('expires_at', '>', knex.fn.now()).first()
   }
 
   if (!cart) {
-    return res.status(200).json({ cart: null, items: [] }) // Return empty cart
+    return res.status(200).json({
+      cart: null,
+      items: [],
+      subtotal: 0,
+      total: 0,
+      message: 'Cart is empty'
+    })
   }
 
-  // Fetch cart items with product details
-  const cartItems = await knex('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id').select(
-    'cart_items.id',
-    'cart_items.product_id',
-    'cart_items.quantity',
-    'products.name',
-    'products.vendor_id',
-    'products.price',
-    'products.image_url' // Include image_url here
-  )
+  const cartItems = await knex('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id').select('cart_items.id', 'cart_items.product_id', 'cart_items.quantity', 'products.name', 'products.vendor_id', 'products.price', 'products.image_url')
 
-  return res.status(200).json({ cart, items: cartItems })
+  // 🧮 Calculate subtotal (sum of item prices * quantity)
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
+  // Optional: Add delivery/tax/discounts logic here
+  const deliveryFee = 1000 // example
+  const total = subtotal + deliveryFee
+
+  return res.status(200).json({
+    cart,
+    items: cartItems,
+    subtotal,
+    total
+  })
 }
 
 const updateCartItem = async (req, res) => {
@@ -166,4 +203,71 @@ const updateCartItem = async (req, res) => {
   return res.status(200).json({ message: 'Cart item removed successfully' })
 }
 
-module.exports = { createCart, clearAndAddToCart, getCart, updateCartItem }
+const updateCartItems = async (req, res) => {
+  const { cart_id, items } = req.body
+  const { sessionToken, user } = req
+
+  // Validate request body
+  const { error } = updateCartItemsSchema.validate(req.body)
+  if (error) return res.status(400).json({ error: error.details[0].message })
+
+  // Verify cart ownership
+  const cart = user ? await knex('carts').where({ id: cart_id, customer_id: user.id }).first() : await knex('carts').where({ id: cart_id, session_token: sessionToken }).first()
+
+  if (!cart) return res.status(404).json({ error: 'Cart not found' })
+
+  try {
+    await knex.transaction(async trx => {
+      for (const item of items) {
+        const { product_id, quantity } = item
+
+        const existingItem = await trx('cart_items').where({ cart_id, product_id }).first()
+        if (!existingItem) continue // skip if not in cart
+
+        const product = await trx('products').where({ id: product_id }).first()
+        if (!product) throw new Error(`Product with ID ${product_id} not found`)
+
+        if (quantity === 0) {
+          await trx('cart_items').where({ cart_id, product_id }).del()
+          continue
+        }
+
+        if (quantity > product.stock) {
+          throw new Error(`Not enough stock for "${product.name}". Available: ${product.stock}`)
+        }
+
+        await trx('cart_items').where({ cart_id, product_id }).update({ quantity, updated_at: knex.fn.now() })
+      }
+    })
+
+    return res.status(200).json({ message: 'Cart updated successfully' })
+  } catch (err) {
+    console.error(err)
+    return res.status(400).json({ error: err.message || 'Failed to update cart items' })
+  }
+}
+
+const removeCartItem = async (req, res) => {
+  const { cart_id, product_id } = req.body
+  const { sessionToken, user } = req
+
+  // Validate request body
+  const { error } = cartItemRemoveSchema.validate(req.body)
+  if (error) return res.status(400).json({ error: error.details[0].message })
+
+  // Verify cart ownership
+  const cart = user ? await knex('carts').where({ id: cart_id, customer_id: user.id }).first() : await knex('carts').where({ id: cart_id, session_token: sessionToken }).first()
+
+  if (!cart) return res.status(404).json({ error: 'Cart not found' })
+
+  // Check if the cart item exists
+  const existingItem = await knex('cart_items').where({ cart_id, product_id }).first()
+  if (!existingItem) return res.status(404).json({ error: 'Cart item not found' })
+
+  // Delete the item
+  await knex('cart_items').where({ cart_id, product_id }).del()
+
+  return res.status(200).json({ message: 'Cart item removed successfully' })
+}
+
+module.exports = { createCart, clearAndAddToCart, getCart, updateCartItem, updateCartItems, removeCartItem }
