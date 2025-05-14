@@ -37,6 +37,7 @@ const loginCustomer = async (req, res) => {
       email: customer.email,
       first_name: customer.first_name,
       last_name: customer.last_name,
+      phone: customer.phone,
       type: 'customer'
     }
   })
