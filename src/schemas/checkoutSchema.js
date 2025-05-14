@@ -56,6 +56,48 @@ const checkoutSchema = Joi.object({
         'any.required': 'Card CVC is required for credit card payments'
       }),
     otherwise: Joi.forbidden()
+  }),
+
+  // Delivery info
+  phone: Joi.string()
+    .pattern(/^255[67][0-9]{8}$/)
+    .required()
+    .messages({
+      'string.pattern.base': 'Delivery phone must be a valid Tanzanian number starting with 255',
+      'any.required': 'Delivery phone is required'
+    }),
+
+  address: Joi.string().min(3).max(255).required().messages({
+    'string.base': 'Address must be a string',
+    'string.empty': 'Address cannot be empty',
+    'string.min': 'Address must be at least 3 characters',
+    'any.required': 'Address is required'
+  }),
+
+  street_name: Joi.string().min(3).max(255).required().messages({
+    'string.base': 'Street name must be a string',
+    'string.empty': 'Street name cannot be empty',
+    'string.min': 'Street name must be at least 3 characters',
+    'any.required': 'Street name is required'
+  }),
+
+  delivery_notes: Joi.string().allow('').max(500).optional().messages({
+    'string.base': 'Delivery notes must be a string',
+    'string.max': 'Delivery notes must be less than 500 characters'
+  }),
+
+  tracking_lat: Joi.number().min(-90).max(90).required().messages({
+    'number.base': 'Latitude must be a number',
+    'number.min': 'Latitude must be >= -90',
+    'number.max': 'Latitude must be <= 90',
+    'any.required': 'Latitude is required'
+  }),
+
+  tracking_lng: Joi.number().min(-180).max(180).required().messages({
+    'number.base': 'Longitude must be a number',
+    'number.min': 'Longitude must be >= -180',
+    'number.max': 'Longitude must be <= 180',
+    'any.required': 'Longitude is required'
   })
 })
 
