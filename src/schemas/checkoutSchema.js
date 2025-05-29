@@ -34,6 +34,16 @@ const checkoutSchema = Joi.object({
     otherwise: Joi.forbidden()
   }),
 
+  cardholder_name: Joi.when('payment_method', {
+    is: 'creditcard',
+    then: Joi.string().min(3).max(50).required().messages({
+      'string.base': 'Cardholder name must be a string',
+      'string.empty': 'Cardholder name cannot be empty',
+      'any.required': 'Cardholder name is required for credit card payments'
+    }),
+    otherwise: Joi.forbidden()
+  }),
+
   card_expiry: Joi.when('payment_method', {
     is: 'creditcard',
     then: Joi.string()
@@ -59,7 +69,7 @@ const checkoutSchema = Joi.object({
   }),
 
   // Delivery info
-  phone: Joi.string()
+  delivery_phone: Joi.string()
     .pattern(/^255[67][0-9]{8}$/)
     .required()
     .messages({
@@ -86,14 +96,14 @@ const checkoutSchema = Joi.object({
     'string.max': 'Delivery notes must be less than 500 characters'
   }),
 
-  tracking_lat: Joi.number().min(-90).max(90).required().messages({
+  lat: Joi.number().min(-90).max(90).required().messages({
     'number.base': 'Latitude must be a number',
     'number.min': 'Latitude must be >= -90',
     'number.max': 'Latitude must be <= 90',
     'any.required': 'Latitude is required'
   }),
 
-  tracking_lng: Joi.number().min(-180).max(180).required().messages({
+  lng: Joi.number().min(-180).max(180).required().messages({
     'number.base': 'Longitude must be a number',
     'number.min': 'Longitude must be >= -180',
     'number.max': 'Longitude must be <= 180',
