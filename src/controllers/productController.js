@@ -3,16 +3,13 @@ const { productSchema, productUpdateSchema, productQuerySchema } = require('../s
 const { validateId } = require('../utils/validateId')
 
 const addProduct = async (req, res) => {
-  const vendor_id = req.user.id // Get the vendor ID from the authenticated user
-  const { name, description, price, image_url, stock, is_available } = req.body
+  const vendor_id = req.user.id
+  const { name, description, price, stock, is_available } = req.body
+  const image_url = req.file?.filename
 
-  // Validate request body
-  const { error } = productSchema.validate(req.body)
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message })
-  }
+  const { error } = productSchema.validate({ ...req.body, image_url })
+  if (error) return res.status(400).json({ error: error.details[0].message })
 
-  // Insert product into the database
   const [product] = await knex('products')
     .insert({
       vendor_id,
@@ -82,7 +79,7 @@ const getProductById = async (req, res) => {
 const getMyProducts = async (req, res) => {
   const vendor_id = req.user.id // Get vendor ID from authenticated user
 
-  const products = await knex('products').select('id', 'name', 'description', 'price', 'stock', 'is_available', 'image_url', 'created_at', 'updated_at').where({ vendor_id }) // Filter by vendor ID
+  const products = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_available', 'image_url', 'created_at', 'updated_at').where({ vendor_id }) // Filter by vendor ID
 
   if (products.length === 0) {
     return res.status(404).json({ message: 'No products found for this vendor' })
