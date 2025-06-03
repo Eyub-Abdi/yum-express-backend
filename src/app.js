@@ -1,5 +1,6 @@
 const express = require('express')
 const app = express()
+const path = require('path')
 const debug = require('debug')('app')
 const cors = require('cors')
 const config = require('../config/default')
@@ -41,6 +42,8 @@ app.use(express.json())
 app.use(cookiePerser())
 app.use(cors())
 
+// SERVER STATIC FILES
+app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')))
 app.use('/api/auth', authRoutes)
 app.use('/api/customers', customerRoutes)
 app.use('/api/vendors', vendoRoutes)
