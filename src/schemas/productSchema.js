@@ -1,11 +1,10 @@
 const Joi = require('joi')
 
 const productSchema = Joi.object({
-  vendor_id: Joi.number().integer().required(), // Ensure vendor_id is present
   name: Joi.string().min(3).max(100).required(),
   description: Joi.string().max(500).required(),
   price: Joi.number().positive().precision(2).required(), // Added price validation
-  image_url: Joi.string().uri().optional(), // Added image_url validation
+  image_url: Joi.string().max(2000).optional(),
   stock: Joi.number().integer().min(0).required(),
   is_available: Joi.boolean().default(true)
 })
@@ -16,7 +15,7 @@ const productUpdateSchema = Joi.object({
   price: Joi.number().positive().precision(2).optional(),
   stock: Joi.number().integer().min(0).optional(),
   is_available: Joi.boolean().optional(),
-  image_url: Joi.string().uri().optional() // Allow updating image URL
+  image_url: Joi.string().max(1000).optional() // Allow updating image URL
 }).min(1) // Ensure at least one field is provided
 
 const productQuerySchema = Joi.object({
