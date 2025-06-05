@@ -30,7 +30,18 @@ const loginVendor = async (req, res) => {
   // Generate JWT token
   const token = jwt.sign({ id: vendor.id, type: 'vendor' }, config.jwt.secret, { expiresIn: config.jwt.expiresIn })
 
-  res.json({ message: 'Login successful', token })
+  res.json({
+    message: 'Login successful',
+    token,
+    user: {
+      id: vendor.id,
+      email: vendor.email,
+      first_name: vendor.first_name,
+      last_name: vendor.last_name,
+      phone: vendor.phone,
+      type: 'vendor'
+    }
+  })
 }
 
 module.exports = { loginVendor }
