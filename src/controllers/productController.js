@@ -1,6 +1,8 @@
 const knex = require('../db/knex')
 const { productSchema, productUpdateSchema, productQuerySchema } = require('../schemas/productSchema')
 const { validateId } = require('../utils/validateId')
+const path = require('path')
+const fs = require('fs')
 
 const addProduct = async (req, res) => {
   const vendor_id = req.user.id
@@ -88,61 +90,137 @@ const getMyProducts = async (req, res) => {
   res.json(products)
 }
 
+// const updateProduct = async (req, res) => {
+//   const vendor_id = req.user.id // Authenticated vendor's ID
+//   const { id } = req.params
+
+//   // Validate product ID
+//   if (!validateId(id)) {
+//     return res.status(400).json({ message: 'Invalid ID format' })
+//   }
+
+//   // Validate request body
+//   const { error } = productUpdateSchema.validate(req.body, { allowUnknown: false })
+//   if (error) {
+//     return res.status(400).json({ error: error.details[0].message })
+//   }
+
+//   // Check if the product exists and belongs to the vendor
+//   const product = await knex('products').where({ id, vendor_id }).first()
+//   if (!product) {
+//     return res.status(403).json({ message: 'You are not authorized to update this product or it does not exist' })
+//   }
+
+//   // Only allow specific fields to be updated
+//   const updateData = {}
+//   const { name, description, price, stock, is_available, image_url } = req.body
+//   if (name) updateData.name = name
+//   if (description) updateData.description = description
+//   if (price) updateData.price = price
+//   if (stock !== undefined) updateData.stock = stock // Handling for 0 values
+//   if (is_available !== undefined) updateData.is_available = is_available
+//   if (image_url) updateData.image_url = image_url
+
+//   updateData.updated_at = new Date()
+
+//   // Update the product
+//   const updatedProduct = await knex('products').where({ id }).update(updateData).returning('*')
+
+//   res.json({ message: 'Product updated successfully', product: updatedProduct[0] })
+// }
+
 const updateProduct = async (req, res) => {
   const vendor_id = req.user.id // Authenticated vendor's ID
   const { id } = req.params
 
-  // Validate product ID
   if (!validateId(id)) {
     return res.status(400).json({ message: 'Invalid ID format' })
   }
 
-  // Validate request body
   const { error } = productUpdateSchema.validate(req.body, { allowUnknown: false })
   if (error) {
     return res.status(400).json({ error: error.details[0].message })
   }
 
-  // Check if the product exists and belongs to the vendor
   const product = await knex('products').where({ id, vendor_id }).first()
   if (!product) {
     return res.status(403).json({ message: 'You are not authorized to update this product or it does not exist' })
   }
 
-  // Only allow specific fields to be updated
   const updateData = {}
-  const { name, description, price, stock, is_available, image_url } = req.body
+  const { name, description, price, stock, is_available } = req.body
   if (name) updateData.name = name
   if (description) updateData.description = description
   if (price) updateData.price = price
-  if (stock !== undefined) updateData.stock = stock // Handling for 0 values
+  if (stock !== undefined) updateData.stock = stock
   if (is_available !== undefined) updateData.is_available = is_available
-  if (image_url) updateData.image_url = image_url
+
+  // === Handle Image Replacement ===
+  if (req.file) {
+    // Delete the old image if it exists
+    if (product.image_url) {
+      const oldImagePath = path.join(__dirname, '..', '..', 'public', product.image_url)
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath)
+      }
+    }
+
+    // Save new image path (match what you use in frontend)
+    updateData.image_url = `${req.file.filename}`
+  }
 
   updateData.updated_at = new Date()
 
-  // Update the product
   const updatedProduct = await knex('products').where({ id }).update(updateData).returning('*')
 
   res.json({ message: 'Product updated successfully', product: updatedProduct[0] })
 }
 
+// const deleteProduct = async (req, res) => {
+//   const vendor_id = req.user.id // Get the vendor ID from the authenticated user
+//   const { id } = req.params
+
+//   // Validate the product ID (to ensure it's a number)
+//   if (!validateId(id)) {
+//     return res.status(400).json({ message: 'Invalid ID format' })
+//   }
+
+//   // Check if the product exists and belongs to the vendor
+//   const product = await knex('products').where({ id, vendor_id }).first()
+//   if (!product) {
+//     return res.status(403).json({ message: 'You are not authorized to delete this product or it does not exist' })
+//   }
+
+//   // Proceed with deletion
+//   await knex('products').where({ id }).del()
+
+//   res.json({ message: 'Product deleted successfully' })
+// }
+
 const deleteProduct = async (req, res) => {
-  const vendor_id = req.user.id // Get the vendor ID from the authenticated user
+  const vendor_id = req.user.id
   const { id } = req.params
 
-  // Validate the product ID (to ensure it's a number)
   if (!validateId(id)) {
     return res.status(400).json({ message: 'Invalid ID format' })
   }
 
-  // Check if the product exists and belongs to the vendor
   const product = await knex('products').where({ id, vendor_id }).first()
   if (!product) {
     return res.status(403).json({ message: 'You are not authorized to delete this product or it does not exist' })
   }
 
-  // Proceed with deletion
+  // Full path to image based on multer config
+  const imagePath = path.join(__dirname, '..', '..', 'public', 'assets', 'images', product.image_url)
+
+  // Delete image from disk
+  fs.unlink(imagePath, err => {
+    if (err) {
+      console.error('Failed to delete product image:', err.message)
+      // Proceed even if the image is not found
+    }
+  })
+
   await knex('products').where({ id }).del()
 
   res.json({ message: 'Product deleted successfully' })
