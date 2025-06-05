@@ -7,7 +7,7 @@ const authenticateUser = require('../middleware/authenticateUser')
 
 router.post('/', authenticateUser, upload.single('image'), addProduct) // Only authenticated vendors can add products
 router.get('/my-store', authenticateUser, getMyProducts)
-router.put('/:id', authenticateUser, updateProduct)
+router.put('/:id', authenticateUser, upload.single('image'), updateProduct)
 router.get('/', getProducts)
 router.get('/:id', getProductById)
 router.delete('/:id', authenticateUser, deleteProduct)
