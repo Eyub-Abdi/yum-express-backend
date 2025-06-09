@@ -4,7 +4,7 @@ const path = require('path')
 const debug = require('debug')('app')
 const cors = require('cors')
 const config = require('../config/default')
-const { sendOrderConfirmationSMS } = require('./services/smsService')
+const { sendSMS } = require('./services/smsService')
 
 const cookiePerser = require('cookie-parser')
 const customerRoutes = require('./routes/customerRoutes')
@@ -22,6 +22,7 @@ const storeRoutes = require('./routes/storeRoutes')
 const productRoutesForAdmin = require('./routes/productRoutesForAdmin')
 const vendorRoutesForAdmin = require('./routes/vendorRoutesForAdmin')
 const adminOrderRoutes = require('./routes/adminOrderRoutes')
+const adminDashboardRoutes = require('./routes/adminDashboardRoutes')
 
 if (!config.jwt.secret) {
   debug('FATAL ERROR, JWT_SECRET IS NOT SET')
@@ -34,9 +35,10 @@ debug(config.email.pass)
 debug(config.session.secret)
 debug(config.payment.clientId)
 debug(config.payment.apiKey)
-debug(config.sms.accountSid)
-debug(config.sms.authToken)
-debug(config.sms.phoneNumber)
+debug(config.sms.username)
+debug(config.sms.password)
+debug(config.sms.isTestMode)
+debug(config.sms.senderId)
 
 app.use(express.json())
 app.use(cookiePerser())
@@ -59,13 +61,14 @@ app.use('/api/admins', adminRoutes)
 app.use('/api/admin-products', productRoutesForAdmin)
 app.use('/api/admin-vendors', vendorRoutesForAdmin)
 app.use('/api/admin-orders', adminOrderRoutes)
+app.use('/api/admin-dashboard', adminDashboardRoutes)
 
 app.get('/', async (req, res) => {
   const message = 'Thank you for your order! 🎉 Your delivery is being prepared.'
-
-  await sendOrderConfirmationSMS('+255657777687', message)
-  res.status(200).json({ message: 'Order confirmed and SMS sent.' })
+  // { message: 'Order confirmed and SMS sent.' }
+  const response = await sendSMS('255657777687', message)
+  res.status(200).json(response)
 })
-const twilioNumber = '+16088798587'
+// const twilioNumber = '+16088798587'
 const port = process.env.PORT || 5000
 app.listen(port, () => debug(`Listening on port ${port}...`))

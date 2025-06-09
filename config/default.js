@@ -21,8 +21,10 @@ module.exports = {
     apiKey: process.env.PAYMENT_API_KEY
   },
   sms: {
-    accountSid: process.env.TWILIO_ACCOUNT_SID, // Twilio Account SID
-    authToken: process.env.TWILIO_AUTH_TOKEN, // Twilio Auth Token
-    phoneNumber: process.env.TWILIO_PHONE_NUMBER // Twilio Phone Number
+    username: process.env.NEXT_SMS_USERNAME, // Next SMS username
+    password: process.env.NEXT_SMS_PASSWORD, // Next SMS password
+    isTestMode: process.env.IS_TEST_MODE,
+    senderId: process.env.SENDER_ID
+    // phoneNumber: process.env.TWILIO_PHONE_NUMBER // Twilio Phone Number
   }
 }

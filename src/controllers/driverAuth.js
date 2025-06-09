@@ -32,12 +32,13 @@ const loginDriver = async (req, res) => {
   return res.status(200).json({
     message: 'Login successful',
     token, // Provide token to the driver
-    driver: {
+    user: {
       id: driver.id,
       first_name: driver.first_name,
       last_name: driver.last_name,
       email: driver.email,
       phone: driver.phone,
+      type: 'driver',
       vehicle_details: driver.vehicle_details
     }
   })

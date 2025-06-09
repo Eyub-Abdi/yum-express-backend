@@ -7,7 +7,7 @@ const checkoutCart = async (req, res) => {
   const { error } = checkoutSchema.validate(req.body)
   if (error) return res.status(400).json({ error: error.details[0].message })
 
-  const { cart_id, payment_method, phone_number: phoneNumber, card_number, card_expiry, card_cvc } = req.body
+  const { cart_id, payment_method, phone_number: phoneNumber, card_number, card_expiry, card_cvc, delivery_phone: phone, address, street_name, delivery_notes, lat, lng } = req.body
 
   const cart = await knex('carts').where({ id: cart_id }).first()
   if (!cart) return res.status(404).json({ error: 'Cart not found' })
@@ -38,6 +38,19 @@ const checkoutCart = async (req, res) => {
         created_at: knex.fn.now()
       })
       .returning('*')
+
+    await trx('deliveries').insert({
+      order_id: order.id,
+      customer_id: cart.customer_id,
+      vendor_id: items[0].vendor_id,
+      phone,
+      address,
+      street_name,
+      delivery_notes,
+      lat,
+      lng,
+      created_at: knex.fn.now()
+    })
 
     const orderItems = items.map(item => ({
       order_id: order.id,

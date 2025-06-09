@@ -36,11 +36,12 @@ const loginAdmin = async (req, res) => {
   res.status(200).json({
     message: 'Login successful',
     token,
-    admin: {
+    user: {
       id: admin.id,
       first_name: admin.first_name,
       last_name: admin.last_name,
       email: admin.email,
+      type: 'admin',
       role: admin.role
     }
   })

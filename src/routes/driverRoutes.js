@@ -7,7 +7,7 @@ const { requireAdminRole } = require('../middleware/requireAdminRole')
 // Route to register a driver
 router.post('/register', authenticateUser, requireAdminRole('superadmin'), registerDriver)
 router.get('/verify-email', verifyDriverEmail)
-router.get('/', authenticateUser, requireAdminRole('admin'), getAllDrivers)
+router.get('/', getAllDrivers)
 router.get('/me', authenticateUser, getDriverProfile)
 router.get('/:id', authenticateUser, requireAdminRole('admin'), getDriverById)
 router.put('/delete/:id', authenticateUser, requireAdminRole('superadmin'), deleteDriver)

@@ -5,7 +5,7 @@ const productSchema = Joi.object({
   description: Joi.string().max(500).required(),
   price: Joi.number().positive().precision(2).required(), // Added price validation
   image_url: Joi.string().max(2000).optional(),
-  stock: Joi.number().integer().min(0).required(),
+  stock: Joi.number().integer().min(0).max(4000).required(),
   is_available: Joi.boolean().default(true)
 })
 
@@ -13,7 +13,7 @@ const productUpdateSchema = Joi.object({
   name: Joi.string().min(3).max(100).optional(),
   description: Joi.string().max(500).optional(),
   price: Joi.number().positive().precision(2).optional(),
-  stock: Joi.number().integer().min(0).optional(),
+  stock: Joi.number().integer().min(0).max(4000).optional(),
   is_available: Joi.boolean().optional(),
   image_url: Joi.string().max(1000).optional() // Allow updating image URL
 }).min(1) // Ensure at least one field is provided

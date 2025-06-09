@@ -368,6 +368,20 @@ const getNearbyVendors = async (req, res) => {
   res.json(vendors)
 }
 
+const getVendorProfile = async (req, res) => {
+  const { id } = req.user
+
+  const vendor = await knex('vendors').where({ id }).first()
+
+  if (!vendor) {
+    return res.status(404).json({ error: 'Vendor not found' })
+  }
+
+  const { password_hash, verification_token, verification_token_expiry, ...vendorProfile } = vendor
+
+  res.json({ vendor: vendorProfile })
+}
+
 module.exports = {
   registerVendor,
   getVendorsWithFilter,
@@ -376,6 +390,7 @@ module.exports = {
   updateVendor,
   updateVendorEmail,
   deleteVendor,
+  getVendorProfile,
   deactivateOwnVendorAccount,
   updateVendorPassword,
   verifyVendorEmail
