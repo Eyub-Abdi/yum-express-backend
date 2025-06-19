@@ -23,6 +23,10 @@ const productRoutesForAdmin = require('./routes/productRoutesForAdmin')
 const vendorRoutesForAdmin = require('./routes/vendorRoutesForAdmin')
 const adminOrderRoutes = require('./routes/adminOrderRoutes')
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes')
+const { orderConfirmationMsg } = require('./utils/textMessages')
+const { sendEmail } = require('./services/emailService')
+const generateDefaultPassword = require('./utils/passwordGenerator')
+const { buildWelcomeMessage } = require('./utils/welcomeMessages')
 
 if (!config.jwt.secret) {
   debug('FATAL ERROR, JWT_SECRET IS NOT SET')
@@ -32,6 +36,9 @@ if (!config.jwt.secret) {
 debug(config.db.database)
 debug(config.email.user)
 debug(config.email.pass)
+debug(config.email.host)
+debug(config.email.port)
+debug(config.email.secure)
 debug(config.session.secret)
 debug(config.payment.clientId)
 debug(config.payment.apiKey)
@@ -43,7 +50,6 @@ debug(config.sms.senderId)
 app.use(express.json())
 app.use(cookiePerser())
 app.use(cors())
-
 // SERVER STATIC FILES
 app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')))
 app.use('/api/auth', authRoutes)
@@ -58,17 +64,27 @@ app.use('/api/store', storeRoutes)
 app.use('/api/sales', salesRoutes)
 app.use('/api/drivers', driverRoutes)
 app.use('/api/admins', adminRoutes)
-app.use('/api/admin-products', productRoutesForAdmin)
-app.use('/api/admin-vendors', vendorRoutesForAdmin)
+app.use('/api/admin/products', productRoutesForAdmin)
+app.use('/api/admin/vendors', vendorRoutesForAdmin)
 app.use('/api/admin-orders', adminOrderRoutes)
 app.use('/api/admin-dashboard', adminDashboardRoutes)
 
 app.get('/', async (req, res) => {
-  const message = 'Thank you for your order! 🎉 Your delivery is being prepared.'
-  // { message: 'Order confirmed and SMS sent.' }
-  const response = await sendSMS('255657777687', message)
-  res.status(200).json(response)
+  {
+    message: 'Order confirmed and SMS sent.'
+  }
+  // const response = await sendEmail({
+  //   recipientEmail: 'ayubabdiy@gmail.com',
+  //   firstName: 'John',
+  //   type: 'support',
+  //   payload: {
+  //     entityType: 'customer', // or 'vendor' or any entity you're verifying
+  //     token: 'verification-token-generated'
+  //   }
+  // })
+  const password = generateDefaultPassword()
+  // const response = await sendSMS('255657777687', orderConfirmationMsg)
+  res.status(200).json(buildWelcomeMessage('Juma', 'Matakoyako'))
 })
-// const twilioNumber = '+16088798587'
 const port = process.env.PORT || 5000
 app.listen(port, () => debug(`Listening on port ${port}...`))

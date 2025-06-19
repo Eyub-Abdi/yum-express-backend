@@ -6,6 +6,6 @@ const { requireAdminRole } = require('../middleware/requireAdminRole')
 
 router.get('/', authenticateUser, requireAdminRole('admin'), getAllVendorsForAdmin)
 router.get('/:id', authenticateUser, requireAdminRole('admin'), getVendorByIdForAdmin)
-router.put('/ban/:id', authenticateUser, requireAdminRole('superadmin'), banVendor)
-router.put('/activate/:id', authenticateUser, requireAdminRole('superadmin'), activateDeactivateVendor)
+router.put('/:id/ban', authenticateUser, requireAdminRole('superadmin'), banVendor)
+router.put('/:id/activate', authenticateUser, requireAdminRole('superadmin'), activateDeactivateVendor)
 module.exports = router

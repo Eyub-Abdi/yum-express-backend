@@ -1,3 +1,5 @@
+const { envBoolean } = require('../src/utils/evnBoolean')
+
 module.exports = {
   db: {
     host: process.env.DB_HOST || 'localhost', // Default to 'localhost' if no env var is set
@@ -13,8 +15,11 @@ module.exports = {
     secret: process.env.SESSION_SECRET // Session token secret from environment variables
   },
   email: {
+    host: process.env.MAIL_HOST,
+    port: process.env.MAIL_PORT,
+    secure: process.env.MAIL_SECURE, // ENCRYPTION BOOLEAN VALUES
     user: process.env.MAIL_USER, // Email address
-    pass: process.env.APP_PASS
+    pass: process.env.MAIL_PASS
   },
   payment: {
     clientId: process.env.PAYMENT_CLIENT_ID,
@@ -25,6 +30,5 @@ module.exports = {
     password: process.env.NEXT_SMS_PASSWORD, // Next SMS password
     isTestMode: process.env.IS_TEST_MODE,
     senderId: process.env.SENDER_ID
-    // phoneNumber: process.env.TWILIO_PHONE_NUMBER // Twilio Phone Number
   }
 }

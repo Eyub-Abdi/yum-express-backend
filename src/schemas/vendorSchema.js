@@ -6,27 +6,31 @@ const vendorRegistrationSchema = Joi.object({
   last_name: Joi.string().min(3).max(50).required(),
   email: Joi.string().email().required(),
   phone: Joi.string()
-    .pattern(/^[0-9]{10}$/) // You can adjust this pattern if needed
+    .pattern(/^(?:[1-9][0-9]{9,11}|0[0-9]{9})$/)
     .required(),
-  banner: Joi.string().uri().required(), // Assuming the banner is a URL
+
+  is_active: Joi.boolean(),
+  banner: Joi.string().required(), // Assuming the banner is a URL
   address: Joi.string().min(3).max(100).required(),
-  latitude: Joi.number().required(),
-  longitude: Joi.number().required(),
-  category: Joi.string().valid('restaurant', 'grocery').required(),
-  business_name: Joi.string().min(3).max(100).required(), // Added business_name field
-  password: Joi.string().min(6).required()
+  // latitude: Joi.number().optional(),
+  // longitude: Joi.number().optional(),
+  category: Joi.string().valid('Restaurant', 'Grocery').required(),
+  business_name: Joi.string().min(3).max(100).required() // Added business_name field
+  // password: Joi.string().min(6).required()
 })
 
 // vendorUpdateSchema.js
 const vendorUpdateSchema = Joi.object({
   first_name: Joi.string().min(3).max(50),
   last_name: Joi.string().min(3).max(50),
-  phone: Joi.string().pattern(/^[0-9]{10}$/), // You can adjust this pattern if needed
-  banner: Joi.string().uri(), // Assuming the banner is a URL
+  phone: Joi.string().pattern(/^(?:[1-9][0-9]{9,11}|0[0-9]{9})$/), // You can adjust this pattern if needed
+  banner: Joi.string(), // Assuming the banner is a URL
   address: Joi.string().min(3).max(100),
-  latitude: Joi.number(),
-  longitude: Joi.number(),
-  category: Joi.string().valid('restaurant', 'grocery'),
+  // latitude: Joi.number(),
+  // longitude: Joi.number(),
+  is_active: Joi.boolean(),
+  email: Joi.string().email(),
+  category: Joi.string().valid('Restaurant', 'Grocery'),
   business_name: Joi.string().min(3).max(100)
 })
 

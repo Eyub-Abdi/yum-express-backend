@@ -149,7 +149,7 @@ const getCart = async (req, res) => {
     })
   }
 
-  const cartItems = await knex('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id').select('cart_items.id', 'cart_items.product_id', 'cart_items.quantity', 'products.name', 'products.vendor_id', 'products.price', 'products.image_url')
+  const cartItems = await knex('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id').select('cart_items.id', 'cart_items.product_id', 'cart_items.quantity', 'products.name', 'products.vendor_id', 'products.price', 'products.max_order_quantity', 'products.image_url')
 
   // 🧮 Calculate subtotal (sum of item prices * quantity)
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -244,7 +244,7 @@ const updateCartItems = async (req, res) => {
     })
 
     // Fetch updated cart items
-    const updatedItems = await knex('cart_items').where({ cart_id }).join('products', 'cart_items.product_id', 'products.id').select('cart_items.product_id', 'cart_items.quantity', 'products.name', 'products.price', 'products.image_url', 'products.vendor_id')
+    const updatedItems = await knex('cart_items').where({ cart_id }).join('products', 'cart_items.product_id', 'products.id').select('cart_items.product_id', 'cart_items.quantity', 'products.name', 'products.price', 'products.image_url', 'products.max_order_quantity', 'products.vendor_id')
 
     // Calculate summary
     const subtotal = updatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)

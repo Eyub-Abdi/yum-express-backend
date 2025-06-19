@@ -14,7 +14,7 @@ const getAllVendorsForAdmin = async (req, res) => {
   const { page, limit, search, verified, is_active } = value
   const offset = (page - 1) * limit
 
-  const query = knex('vendors').select('id', 'first_name', 'last_name', 'business_name', 'email', 'phone', 'banner', 'address', 'location', 'latitude', 'longitude', 'category', 'is_banned', 'verified', 'is_active', 'created_at')
+  const query = knex('vendors').select('id', 'first_name', 'last_name', 'business_name', 'email', 'phone', 'banner', 'address', 'location', 'lat', 'lng', 'category', 'is_banned', 'verified', 'is_active', 'created_at')
 
   if (search) {
     query.whereILike('business_name', `%${search}%`)
@@ -49,7 +49,7 @@ const getVendorByIdForAdmin = async (req, res) => {
     return res.status(400).json({ message: 'Invalid vendor ID' })
   }
 
-  const vendor = await knex('vendors').select('id', 'business_name', 'first_name', 'last_name', 'email', 'phone', 'address', 'latitude', 'longitude', 'location', 'banner', 'category', 'is_banned', 'created_at').where({ id }).first()
+  const vendor = await knex('vendors').select('id', 'business_name', 'first_name', 'last_name', 'email', 'phone', 'address', 'lat', 'lng', 'location', 'banner', 'category', 'is_banned', 'is_active', 'verified', 'created_at', 'updated_at').where({ id }).first()
 
   if (!vendor) {
     return res.status(404).json({ message: 'Vendor not found' })

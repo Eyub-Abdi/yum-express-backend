@@ -8,7 +8,7 @@ const getAllProductsForAdmin = async (req, res) => {
     return res.status(400).json({ error: error.details[0].message })
   }
 
-  const { page, limit, search, vendor_id, is_available, min_price, max_price, sort } = value
+  const { page, limit, search, vendor_id, is_disabled, min_price, max_price, sort } = value
 
   const offset = (page - 1) * limit
 
@@ -22,8 +22,8 @@ const getAllProductsForAdmin = async (req, res) => {
     baseQuery.andWhere('products.vendor_id', vendor_id)
   }
 
-  if (is_available !== undefined) {
-    baseQuery.andWhere('products.is_available', is_available === 'true')
+  if (is_disabled !== undefined) {
+    baseQuery.andWhere('products.is_disabled', is_disabled === 'true')
   }
 
   if (min_price) {
@@ -40,7 +40,7 @@ const getAllProductsForAdmin = async (req, res) => {
   const total = Number(totalResult.count)
 
   // Main product query with selected fields
-  const query = baseQuery.clone().select('products.id', 'products.name', 'products.description', 'products.price', 'products.stock', 'products.is_available', 'products.image_url', 'products.created_at', 'vendors.id as vendor_id', 'vendors.business_name as vendor_name')
+  const query = baseQuery.clone().select('products.id', 'products.name', 'products.description', 'products.price', 'products.stock', 'products.is_disabled', 'products.image_url', 'products.created_at', 'vendors.id as vendor_id', 'vendors.business_name as vendor_name')
 
   // Sorting
   switch (sort) {

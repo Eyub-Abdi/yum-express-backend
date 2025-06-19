@@ -3,36 +3,121 @@ const knex = require('../db/knex')
 const { vendorRegistrationSchema, vendorUpdateSchema, vendorEmailUpdateSchema, vendorLocationSchema } = require('../schemas/vendorSchema')
 const vendorQuerySchema = require('../schemas/vendorQuerySchema')
 const updatePasswordSchema = require('../schemas/updatePasswordSchema')
-const { sendVerificationEmail } = require('../services/emailService') // Import the email service
+const { sendVerificationEmail, sendEmail } = require('../services/emailService') // Import the email service
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService') // Import token generation functions
 const { verifyEmail } = require('../services/emailVerificationService')
+const { buildWelcomeMessage } = require('../utils/welcomeMessages')
 const { validateId } = require('../utils/validateId')
+const generateDefaultPassword = require('../utils/passwordGenerator')
+const { sendSMS } = require('../services/smsService')
+const path = require('path')
+const fs = require('fs')
+
+// const registerVendor = async (req, res) => {
+//   const { error } = vendorRegistrationSchema.validate(req.body)
+//   if (error) {
+//     return res.status(400).json({ error: error.details[0].message })
+//   }
+
+//   const { first_name, last_name, email, phone, banner, address, latitude, longitude, category, business_name, password } = req.body
+
+//   // Check if the vendor already exists by email or phone number
+//   const existingVendor = await knex('vendors').where('email', email).orWhere('phone', phone).first()
+
+//   if (existingVendor) {
+//     return res.status(400).json({
+//       message: 'Vendor with this email or phone number already exists.'
+//     })
+//   }
+
+//   // Hash the password
+//   const hashedPassword = await bcrypt.hash(password, 10)
+
+//   // Generate the verification token and expiry time
+//   const verificationToken = generateVerificationToken()
+//   const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 1 hour validity
+
+//   // Insert the new vendor into the database
+//   const [newVendor] = await knex('vendors')
+//     .insert({
+//       first_name,
+//       last_name,
+//       email,
+//       phone,
+//       banner,
+//       address,
+//       latitude,
+//       location: knex.raw('ST_SetSRID(ST_MakePoint(?, ?), 4326)', [longitude, latitude]), // Create location from lat/long
+//       longitude,
+//       category,
+//       business_name, // Added business_name field
+//       password_hash: hashedPassword,
+//       verification_token: verificationToken,
+//       verification_token_expiry: verificationTokenExpiry,
+//       verified: false, // Vendor is not verified by default
+//       is_active: false, // Default to inactive
+//       created_at: new Date(),
+//       updated_at: new Date()
+//     })
+//     .returning('*')
+
+//   // Send the verification email
+//   try {
+//     await sendVerificationEmail(email, first_name, verificationToken, 'vendors')
+//   } catch (err) {
+//     console.error('Error sending verification email:', err)
+//   }
+
+//   // Return success message
+//   return res.status(201).json({
+//     message: 'Vendor registered successfully! Please verify your email.',
+//     vendor: {
+//       id: newVendor.id,
+//       first_name: newVendor.first_name,
+//       last_name: newVendor.last_name,
+//       email: newVendor.email,
+//       phone: newVendor.phone,
+//       banner: newVendor.banner,
+//       address: newVendor.address,
+//       latitude: newVendor.latitude,
+//       longitude: newVendor.longitude,
+//       location: newVendor.location,
+//       category: newVendor.category,
+//       business_name: newVendor.business_name, // Included business_name in the response
+//       is_active: newVendor.is_active,
+//       created_at: newVendor.created_at,
+//       updated_at: newVendor.updated_at,
+//       verified: newVendor.verified
+//     }
+//   })
+// }
 
 const registerVendor = async (req, res) => {
-  const { error } = vendorRegistrationSchema.validate(req.body)
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message })
-  }
+  // const { error } = vendorRegistrationSchema.validate(req.body)
+  // if (error) {
+  //   return res.status(400).json({ error: error.details[0].message })
+  // }
 
-  const { first_name, last_name, email, phone, banner, address, latitude, longitude, category, business_name, password } = req.body
+  const { first_name, last_name, email, phone, banner, address, category, business_name } = req.body
 
-  // Check if the vendor already exists by email or phone number
+  // Check for existing vendor
   const existingVendor = await knex('vendors').where('email', email).orWhere('phone', phone).first()
 
   if (existingVendor) {
     return res.status(400).json({
-      message: 'Vendor with this email or phone number already exists.'
+      message: 'Vendor with this email or phone already exists.'
     })
   }
 
-  // Hash the password
+  // Hash password
+  const password = generateDefaultPassword()
   const hashedPassword = await bcrypt.hash(password, 10)
 
-  // Generate the verification token and expiry time
+  // Generate verification token
   const verificationToken = generateVerificationToken()
-  const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 1 hour validity
+  const verificationTokenExpiry = generateVerificationTokenExpiry(48)
 
-  // Insert the new vendor into the database
+  // Insert into DB
   const [newVendor] = await knex('vendors')
     .insert({
       first_name,
@@ -41,31 +126,29 @@ const registerVendor = async (req, res) => {
       phone,
       banner,
       address,
-      latitude,
-      location: knex.raw('ST_SetSRID(ST_MakePoint(?, ?), 4326)', [longitude, latitude]), // Create location from lat/long
-      longitude,
       category,
-      business_name, // Added business_name field
+      business_name,
       password_hash: hashedPassword,
       verification_token: verificationToken,
       verification_token_expiry: verificationTokenExpiry,
-      verified: false, // Vendor is not verified by default
-      is_active: true, // Default to active
+      verified: false,
+      is_active: false,
       created_at: new Date(),
       updated_at: new Date()
     })
     .returning('*')
-
-  // Send the verification email
+  const message = buildWelcomeMessage(first_name, password)
+  const smsResponse = await sendSMS(phone, message)
+  // Send verification email
   try {
-    await sendVerificationEmail(email, first_name, verificationToken, 'vendors')
+    await sendEmail({ recipientEmail: email, firstName: first_name, type: 'verification', payload: { token: verificationToken, entityType: 'vendors' } })
   } catch (err) {
     console.error('Error sending verification email:', err)
   }
 
-  // Return success message
+  //Return vendor
   return res.status(201).json({
-    message: 'Vendor registered successfully! Please verify your email.',
+    message: 'Vendor registered successfully!',
     vendor: {
       id: newVendor.id,
       first_name: newVendor.first_name,
@@ -74,11 +157,8 @@ const registerVendor = async (req, res) => {
       phone: newVendor.phone,
       banner: newVendor.banner,
       address: newVendor.address,
-      latitude: newVendor.latitude,
-      longitude: newVendor.longitude,
-      location: newVendor.location,
       category: newVendor.category,
-      business_name: newVendor.business_name, // Included business_name in the response
+      business_name: newVendor.business_name,
       is_active: newVendor.is_active,
       created_at: newVendor.created_at,
       updated_at: newVendor.updated_at,
@@ -134,7 +214,7 @@ const getVendorById = async (req, res) => {
   }
 
   // Retrieve the vendor by ID
-  const vendor = await knex('vendors').select('id', 'first_name', 'last_name', 'email', 'phone', 'banner', 'address', 'latitude', 'longitude', 'category', 'business_name', 'is_active', 'verified', 'created_at', 'updated_at').where({ id }).first()
+  const vendor = await knex('vendors').select('id', 'first_name', 'last_name', 'email', 'phone', 'banner', 'address', 'lat', 'lng', 'category', 'business_name', 'is_active', 'verified', 'created_at', 'updated_at').where({ id }).first()
 
   // If vendor not found, return a 404 error
   if (!vendor) {
@@ -145,43 +225,129 @@ const getVendorById = async (req, res) => {
   res.json(vendor)
 }
 
+// const updateVendor = async (req, res) => {
+//   const { id } = req.params
+
+//   // Validate the ID
+//   if (!validateId(id)) {
+//     return res.status(400).json({ message: 'Invalid ID format' })
+//   }
+
+//   // Validate the request body with the schema
+//   const { error } = vendorUpdateSchema.validate(req.body)
+//   if (error) {
+//     return res.status(400).json({ error: error.details[0].message })
+//   }
+
+//   // Check if the vendor exists
+//   const vendor = await knex('vendors').where({ id }).first()
+//   if (!vendor) {
+//     return res.status(404).json({ message: 'Vendor not found' })
+//   }
+
+//   // Update vendor details excluding the password
+//   await knex('vendors')
+//     .where({ id })
+//     .update({
+//       first_name: req.body.first_name || vendor.first_name,
+//       last_name: req.body.last_name || vendor.last_name,
+//       phone: req.body.phone || vendor.phone,
+//       banner: req.body.banner || vendor.banner,
+//       address: req.body.address || vendor.address,
+//       latitude: req.body.latitude || vendor.latitude,
+//       longitude: req.body.longitude || vendor.longitude,
+//       category: req.body.category || vendor.category,
+//       business_name: req.body.business_name || vendor.business_name,
+//       updated_at: new Date()
+//     })
+
+//   res.json({ message: 'Vendor updated successfully' })
+// }
+
+// const updateVendor = async (req, res) => {
+//   const { id } = req.params
+
+//   if (!validateId(id)) {
+//     return res.status(400).json({ message: 'Invalid ID format' })
+//   }
+
+//   const { error } = vendorUpdateSchema.validate(req.body)
+//   if (error) {
+//     return res.status(400).json({ error: error.details[0].message })
+//   }
+
+//   const vendor = await knex('vendors').where({ id }).first()
+//   if (!vendor) {
+//     return res.status(404).json({ message: 'Vendor not found' })
+//   }
+
+//   await knex('vendors')
+//     .where({ id })
+//     .update({
+//       first_name: req.body.first_name || vendor.first_name,
+//       last_name: req.body.last_name || vendor.last_name,
+//       phone: req.body.phone || vendor.phone,
+//       banner: req.body.banner || vendor.banner,
+//       address: req.body.address || vendor.address,
+//       latitude: req.body.latitude || vendor.latitude,
+//       longitude: req.body.longitude || vendor.longitude,
+//       category: req.body.category || vendor.category,
+//       business_name: req.body.business_name || vendor.business_name,
+//       updated_at: new Date()
+//     })
+
+//   // Fetch updated vendor
+//   const updatedVendor = await knex('vendors').select('id', 'first_name', 'last_name', 'email', 'phone', 'banner', 'address', 'latitude', 'longitude', 'category', 'business_name', 'is_active', 'verified', 'created_at', 'updated_at').where({ id }).first()
+
+//   res.json({ message: 'Vendor updated successfully', vendor: updatedVendor })
+// }
+
 const updateVendor = async (req, res) => {
   const { id } = req.params
 
-  // Validate the ID
   if (!validateId(id)) {
     return res.status(400).json({ message: 'Invalid ID format' })
   }
 
-  // Validate the request body with the schema
   const { error } = vendorUpdateSchema.validate(req.body)
   if (error) {
     return res.status(400).json({ error: error.details[0].message })
   }
 
-  // Check if the vendor exists
   const vendor = await knex('vendors').where({ id }).first()
   if (!vendor) {
     return res.status(404).json({ message: 'Vendor not found' })
   }
 
-  // Update vendor details excluding the password
-  await knex('vendors')
-    .where({ id })
-    .update({
-      first_name: req.body.first_name || vendor.first_name,
-      last_name: req.body.last_name || vendor.last_name,
-      phone: req.body.phone || vendor.phone,
-      banner: req.body.banner || vendor.banner,
-      address: req.body.address || vendor.address,
-      latitude: req.body.latitude || vendor.latitude,
-      longitude: req.body.longitude || vendor.longitude,
-      category: req.body.category || vendor.category,
-      business_name: req.body.business_name || vendor.business_name,
-      updated_at: new Date()
-    })
+  const updateData = {
+    first_name: req.body.first_name || vendor.first_name,
+    last_name: req.body.last_name || vendor.last_name,
+    phone: req.body.phone || vendor.phone,
+    address: req.body.address || vendor.address,
+    category: req.body.category || vendor.category,
+    business_name: req.body.business_name || vendor.business_name,
+    updated_at: new Date()
+  }
 
-  res.json({ message: 'Vendor updated successfully' })
+  // === Handle banner replacement ===
+  if (req.file) {
+    // Delete old banner if exists
+    if (vendor.banner) {
+      const oldPath = path.join(__dirname, '..', '..', 'public', vendor.banner)
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath)
+      }
+    }
+
+    // Save new banner path
+    updateData.banner = req.file.filename
+  }
+
+  await knex('vendors').where({ id }).update(updateData)
+
+  const updatedVendor = await knex('vendors').select('id', 'first_name', 'last_name', 'email', 'phone', 'banner', 'address', 'latitude', 'longitude', 'category', 'business_name', 'is_active', 'verified', 'created_at', 'updated_at').where({ id }).first()
+
+  res.json({ message: 'Vendor updated successfully', vendor: updatedVendor })
 }
 
 const updateVendorEmail = async (req, res) => {

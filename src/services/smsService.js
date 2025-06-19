@@ -1,16 +1,17 @@
 const axios = require('axios')
 const config = require('../../config/default')
+const { envBoolean } = require('../utils/evnBoolean')
 
 function getAuthHeader(username, password) {
-  console.log(username + ':' + password)
   const base64 = Buffer.from(`${username}:${password}`).toString('base64')
   return `Basic ${base64}`
 }
 
 function getSMSApiUrl() {
-  return config.sms.isTestMode ? 'https://messaging-service.co.tz/api/sms/v1/test/text/single' : 'https://messaging-service.co.tz/api/sms/v1/text/single'
-}
+  const isTestMode = envBoolean('IS_TEST_MODE')
 
+  return isTestMode ? 'https://messaging-service.co.tz/api/sms/v1/test/text/single' : 'https://messaging-service.co.tz/api/sms/v1/text/single'
+}
 /**
  * Sends an SMS message using Next SMS API
  * @param {string} toPhoneNumber
@@ -18,14 +19,18 @@ function getSMSApiUrl() {
  * @param {string} [reference='yum-express-ref']
  * @returns {Promise<Object>}
  */
+console.log(getSMSApiUrl())
+
 function sendSMS(toPhoneNumber, message, reference = 'yum-express-ref') {
+  // WAITTING FOR SENDOER ID TO BE REGISTERED IN TIGO OR NEXT SMS
+  // COME BACK LATER WHEN WE HAVE A VERIFIED SENDER ID FOR THIS
+  //  FEATURE TO BE COMPLETED.
   const data = {
-    from: '255684106419', //config.sms.senderId,
+    from: config.sms.senderId,
     to: toPhoneNumber,
     text: message,
     reference
   }
-  // return console.log(console.log(data))
   return axios({
     method: 'post',
     url: getSMSApiUrl(),

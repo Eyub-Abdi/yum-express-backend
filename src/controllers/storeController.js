@@ -14,7 +14,7 @@ const getStore = async (req, res) => {
     return res.status(404).json({ message: 'Vendor not found' })
   }
 
-  const products = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'image_url', 'stock', 'is_available', 'created_at').where({ vendor_id: id, is_available: true })
+  const products = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'image_url', 'stock', 'max_order_quantity', 'is_disabled', 'created_at').where({ vendor_id: id, is_disabled: false })
 
   const reviewStats = await knex('reviews').where({ vendor_id: id }).avg('rating as average_rating').count('id as total_reviews').first()
 

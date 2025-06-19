@@ -20,7 +20,7 @@ const addProduct = async (req, res) => {
       price,
       image_url,
       stock,
-      is_available,
+      is_disabled: false,
       created_at: new Date(),
       updated_at: new Date()
     })
@@ -69,7 +69,7 @@ const getProductById = async (req, res) => {
     return res.status(400).json({ message: 'Invalid ID format' })
   }
 
-  const product = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_available', 'image_url', 'created_at', 'updated_at').where({ id }).first()
+  const product = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_disabled', 'max_order_quantity', 'image_url', 'created_at', 'updated_at').where({ id }).first()
 
   if (!product) {
     return res.status(404).json({ message: 'Product not found' })
@@ -81,7 +81,7 @@ const getProductById = async (req, res) => {
 const getMyProducts = async (req, res) => {
   const vendor_id = req.user.id // Get vendor ID from authenticated user
 
-  const products = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_available', 'image_url', 'created_at', 'updated_at').where({ vendor_id }) // Filter by vendor ID
+  const products = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_disabled', 'max_order_quantity', 'image_url', 'created_at', 'updated_at').where({ vendor_id }) // Filter by vendor ID
 
   if (products.length === 0) {
     return res.status(404).json({ message: 'No products found for this vendor' })
@@ -148,12 +148,12 @@ const updateProduct = async (req, res) => {
   }
 
   const updateData = {}
-  const { name, description, price, stock, is_available } = req.body
+  const { name, description, price, stock, is_disabled } = req.body
   if (name) updateData.name = name
   if (description) updateData.description = description
   if (price) updateData.price = price
   if (stock !== undefined) updateData.stock = stock
-  if (is_available !== undefined) updateData.is_available = is_available
+  if (is_available !== undefined) updateData.is_disabled = is_disabled
 
   // === Handle Image Replacement ===
   if (req.file) {
