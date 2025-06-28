@@ -90,6 +90,23 @@ const getMyProducts = async (req, res) => {
   res.json(products)
 }
 
+const getMyProductById = async (req, res) => {
+  const vendor_id = req.user.id
+  const { id } = req.params
+
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid ID format' })
+  }
+
+  const product = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_disabled', 'max_order_quantity', 'image_url', 'created_at', 'updated_at', 'deleted_at', 'deleted_by').where({ id, vendor_id }).first()
+
+  if (!product) {
+    return res.status(404).json({ message: 'Product not found or unauthorized access' })
+  }
+
+  res.json(product)
+}
+
 // const updateProduct = async (req, res) => {
 //   const vendor_id = req.user.id // Authenticated vendor's ID
 //   const { id } = req.params
@@ -226,4 +243,4 @@ const deleteProduct = async (req, res) => {
   res.json({ message: 'Product deleted successfully' })
 }
 
-module.exports = { addProduct, getProducts, getProductById, getMyProducts, updateProduct, deleteProduct }
+module.exports = { addProduct, getProducts, getProductById, getMyProducts, getMyProductById, updateProduct, deleteProduct }

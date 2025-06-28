@@ -24,6 +24,8 @@ const vendorRoutesForAdmin = require('./routes/vendorRoutesForAdmin')
 const adminOrderRoutes = require('./routes/adminOrderRoutes')
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes')
 const { orderConfirmationMsg } = require('./utils/textMessages')
+const supportRoutes = require('./routes/supportRoutes')
+
 const { sendEmail } = require('./services/emailService')
 const generateDefaultPassword = require('./utils/passwordGenerator')
 const { buildWelcomeMessage } = require('./utils/welcomeMessages')
@@ -68,6 +70,7 @@ app.use('/api/admin/products', productRoutesForAdmin)
 app.use('/api/admin/vendors', vendorRoutesForAdmin)
 app.use('/api/admin-orders', adminOrderRoutes)
 app.use('/api/admin-dashboard', adminDashboardRoutes)
+app.use('/api/support', supportRoutes)
 
 app.get('/', async (req, res) => {
   {

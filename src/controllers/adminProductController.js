@@ -40,7 +40,7 @@ const getAllProductsForAdmin = async (req, res) => {
   const total = Number(totalResult.count)
 
   // Main product query with selected fields
-  const query = baseQuery.clone().select('products.id', 'products.name', 'products.description', 'products.price', 'products.stock', 'products.is_disabled', 'products.image_url', 'products.created_at', 'vendors.id as vendor_id', 'vendors.business_name as vendor_name')
+  const query = baseQuery.clone().select('products.id', 'products.name', 'products.description', 'products.price', 'products.stock', 'products.max_order_quantity', 'products.is_disabled', 'products.image_url', 'products.created_at', 'vendors.id as vendor_id', 'vendors.business_name as vendor_name')
 
   // Sorting
   switch (sort) {

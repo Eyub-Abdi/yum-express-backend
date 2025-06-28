@@ -14,7 +14,7 @@ const getAllVendorsForAdmin = async (req, res) => {
   const { page, limit, search, verified, is_active } = value
   const offset = (page - 1) * limit
 
-  const query = knex('vendors').select('id', 'first_name', 'last_name', 'business_name', 'email', 'phone', 'banner', 'address', 'location', 'lat', 'lng', 'category', 'is_banned', 'verified', 'is_active', 'created_at')
+  const query = knex('vendors').select('id', 'first_name', 'last_name', 'business_name', 'email', 'phone', 'banner', 'address', 'location', 'lat', 'lng', 'category', 'is_banned', 'verified', 'is_active', 'created_at', 'deleted_at')
 
   if (search) {
     query.whereILike('business_name', `%${search}%`)
@@ -49,7 +49,7 @@ const getVendorByIdForAdmin = async (req, res) => {
     return res.status(400).json({ message: 'Invalid vendor ID' })
   }
 
-  const vendor = await knex('vendors').select('id', 'business_name', 'first_name', 'last_name', 'email', 'phone', 'address', 'lat', 'lng', 'location', 'banner', 'category', 'is_banned', 'is_active', 'verified', 'created_at', 'updated_at').where({ id }).first()
+  const vendor = await knex('vendors').select('id', 'business_name', 'first_name', 'last_name', 'email', 'phone', 'address', 'lat', 'lng', 'location', 'banner', 'category', 'is_banned', 'is_active', 'verified', 'created_at', 'updated_at', 'deleted_at').where({ id }).first()
 
   if (!vendor) {
     return res.status(404).json({ message: 'Vendor not found' })
@@ -137,4 +137,73 @@ const activateDeactivateVendor = async (req, res) => {
   })
 }
 
-module.exports = { getAllVendorsForAdmin, getVendorByIdForAdmin, banVendor, activateDeactivateVendor }
+const softDeleteVendor = async (req, res) => {
+  const { id } = req.params
+  const adminId = req.user?.id
+
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid vendor ID' })
+  }
+
+  if (!adminId) {
+    return res.status(401).json({ message: 'Unauthorized: admin ID missing' })
+  }
+
+  const vendor = await knex('vendors').where({ id }).first()
+  if (!vendor) {
+    return res.status(404).json({ message: 'Vendor not found' })
+  }
+
+  if (vendor.deleted_at) {
+    return res.status(400).json({ message: 'Vendor already deleted' })
+  }
+
+  await knex('vendors').where({ id }).update({
+    deleted_at: new Date(),
+    deleted_by: adminId,
+    is_active: false,
+    updated_at: new Date()
+  })
+
+  res.json({
+    message: 'Vendor soft deleted successfully',
+    vendor_id: id
+  })
+}
+
+const restoreVendor = async (req, res) => {
+  const { id } = req.params
+  const adminId = req.user?.id
+
+  if (!validateId(id)) {
+    return res.status(400).json({ message: 'Invalid vendor ID' })
+  }
+
+  if (!adminId) {
+    return res.status(401).json({ message: 'Unauthorized: admin ID missing' })
+  }
+
+  const vendor = await knex('vendors').where({ id }).first()
+
+  if (!vendor) {
+    return res.status(404).json({ message: 'Vendor not found' })
+  }
+
+  if (!vendor.deleted_at) {
+    return res.status(400).json({ message: 'Vendor is not deleted' })
+  }
+
+  await knex('vendors').where({ id }).update({
+    deleted_at: null,
+    deleted_by: null,
+    is_active: true,
+    updated_at: new Date()
+  })
+
+  res.json({
+    message: 'Vendor restored successfully',
+    vendor_id: id
+  })
+}
+
+module.exports = { getAllVendorsForAdmin, getVendorByIdForAdmin, banVendor, activateDeactivateVendor, softDeleteVendor, restoreVendor }
