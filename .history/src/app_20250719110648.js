@@ -86,6 +86,22 @@ app.get('/', async (req, res) => {
   //   }
   // })
 
+  $env: DEBUG = 'app'
+  $env: DB_NAME = 'ecommerce'
+  $env: MAIL_USER = 'info@yum-express.com'
+  $env: MAIL_PASS = '@yumexpress2025'
+  $env: MAIL_HOST = 'yum-express.com'
+  $env: MAIL_SEUCRE = true
+  $env: DB_USER = 'postgres'
+  $env: SESSION_SECRET = 'your-session-token-secret-key'
+  $env: PAYMENT_API_KEY = 'SKJqQYcCnuMr3nOA7KCHmbT9GF6DjWtRVjMXrGIGnI'
+  $env: PAYMENT_CLIENT_ID = 'IDbwhCeYw76C62gzUzKhOI4wQwVRJ1YX'
+  $env: TWILIO_ACCOUNT_SID = 'AC1d0efc2aa522e042f79273979507ae33'
+  $env: TWILIO_AUTH_TOKEN = '818203ba60bb85b9429c15572a2d2c39'
+  $env: NEXT_SMS_USERNAME = 'yumexpreess'
+  $env: NEXT_SMS_PASSWORD = 'Kijangwani2003'
+  $env: IS_TEST_MODE = true
+  $env: SENDER_ID = 'YumExpress'
   const password = generateDefaultPassword()
   // const response = await sendSMS('255657777687', orderConfirmationMsg)
   res.status(200).json(buildWelcomeMessage('Juma', 'Matakoyako'))

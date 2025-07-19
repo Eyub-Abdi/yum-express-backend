@@ -85,7 +85,6 @@ app.get('/', async (req, res) => {
   //     token: 'verification-token-generated'
   //   }
   // })
-
   const password = generateDefaultPassword()
   // const response = await sendSMS('255657777687', orderConfirmationMsg)
   res.status(200).json(buildWelcomeMessage('Juma', 'Matakoyako'))
