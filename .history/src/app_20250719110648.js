@@ -23,16 +23,12 @@ const productRoutesForAdmin = require('./routes/productRoutesForAdmin')
 const vendorRoutesForAdmin = require('./routes/vendorRoutesForAdmin')
 const adminOrderRoutes = require('./routes/adminOrderRoutes')
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes')
-const vendorDashboardRoutes = require('./routes/vendorDashboardRoutes')
 const { orderConfirmationMsg } = require('./utils/textMessages')
 const supportRoutes = require('./routes/supportRoutes')
-const riderDashboardRoutes = require('./routes/riderDashboardRoutes')
-const verificationRoutes = require('./routes/verificationRoutes')
 
 const { sendEmail } = require('./services/emailService')
 const generateDefaultPassword = require('./utils/passwordGenerator')
 const { buildWelcomeMessage } = require('./utils/welcomeMessages')
-const generateOtp = require('./utils/otpGenerator')
 
 if (!config.jwt.secret) {
   debug('FATAL ERROR, JWT_SECRET IS NOT SET')
@@ -69,15 +65,13 @@ app.use('/api/order', orderRoutes)
 app.use('/api/store', storeRoutes)
 app.use('/api/sales', salesRoutes)
 app.use('/api/drivers', driverRoutes)
-app.use('/api/riders', riderDashboardRoutes)
 app.use('/api/admins', adminRoutes)
 app.use('/api/admin/products', productRoutesForAdmin)
 app.use('/api/admin/vendors', vendorRoutesForAdmin)
 app.use('/api/admin-orders', adminOrderRoutes)
 app.use('/api/admin-dashboard', adminDashboardRoutes)
-app.use('/api/vendor/dashboard', vendorDashboardRoutes)
 app.use('/api/support', supportRoutes)
-app.use('/api/verify', verificationRoutes)
+
 app.get('/', async (req, res) => {
   {
     message: 'Order confirmed and SMS sent.'
@@ -92,9 +86,25 @@ app.get('/', async (req, res) => {
   //   }
   // })
 
+  $env: DEBUG = 'app'
+  $env: DB_NAME = 'ecommerce'
+  $env: MAIL_USER = 'info@yum-express.com'
+  $env: MAIL_PASS = '@yumexpress2025'
+  $env: MAIL_HOST = 'yum-express.com'
+  $env: MAIL_SEUCRE = true
+  $env: DB_USER = 'postgres'
+  $env: SESSION_SECRET = 'your-session-token-secret-key'
+  $env: PAYMENT_API_KEY = 'SKJqQYcCnuMr3nOA7KCHmbT9GF6DjWtRVjMXrGIGnI'
+  $env: PAYMENT_CLIENT_ID = 'IDbwhCeYw76C62gzUzKhOI4wQwVRJ1YX'
+  $env: TWILIO_ACCOUNT_SID = 'AC1d0efc2aa522e042f79273979507ae33'
+  $env: TWILIO_AUTH_TOKEN = '818203ba60bb85b9429c15572a2d2c39'
+  $env: NEXT_SMS_USERNAME = 'yumexpreess'
+  $env: NEXT_SMS_PASSWORD = 'Kijangwani2003'
+  $env: IS_TEST_MODE = true
+  $env: SENDER_ID = 'YumExpress'
   const password = generateDefaultPassword()
   // const response = await sendSMS('255657777687', orderConfirmationMsg)
-  res.status(200).json(generateOtp(5))
+  res.status(200).json(buildWelcomeMessage('Juma', 'Matakoyako'))
 })
 const port = process.env.PORT || 5000
 app.listen(port, () => debug(`Listening on port ${port}...`))

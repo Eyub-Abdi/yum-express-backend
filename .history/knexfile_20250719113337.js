@@ -3,22 +3,27 @@
 /**
  * @type { Object.<string, import("knex").Knex.Config> }
  */
-const config = require('./config/default')
-
 module.exports = {
   development: {
+    client: 'sqlite3',
+    connection: {
+      filename: './dev.sqlite3'
+    }
+  },
+
+  staging: {
     client: 'postgresql',
     connection: {
-      database: config.db.database,
-      user: config.db.user,
-      password: config.db.password
+      database: 'yumexpress',
+      user: 'username',
+      password: 'password'
     },
     pool: {
       min: 2,
       max: 10
     },
     migrations: {
-      tableName: 'knex_migrations'
+      directory: './migrations'
     }
   },
 

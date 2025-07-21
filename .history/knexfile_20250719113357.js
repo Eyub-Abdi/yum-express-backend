@@ -3,15 +3,20 @@
 /**
  * @type { Object.<string, import("knex").Knex.Config> }
  */
-const config = require('./config/default')
-
 module.exports = {
   development: {
+    client: 'sqlite3',
+    connection: {
+      filename: './dev.sqlite3'
+    }
+  },
+
+  staging: {
     client: 'postgresql',
     connection: {
-      database: config.db.database,
-      user: config.db.user,
-      password: config.db.password
+      database: 'my_db',
+      user: 'username',
+      password: 'password'
     },
     pool: {
       min: 2,

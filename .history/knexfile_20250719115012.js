@@ -3,7 +3,7 @@
 /**
  * @type { Object.<string, import("knex").Knex.Config> }
  */
-const config = require('./config/default')
+const config = require('../con')
 
 module.exports = {
   development: {
