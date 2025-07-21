@@ -195,12 +195,40 @@ const updateVendorOrderStatus = async (req, res) => {
   }
 
   // If status is shipped or delivered, update the corresponding timestamp
-  if (status === 'shipped') updates.shipped_at = knex.fn.now()
+  if (status === 'on_the_way') updates.shipped_at = knex.fn.now()
   if (status === 'delivered') updates.delivered_at = knex.fn.now()
 
   await knex('orders').where({ id }).update(updates)
 
   res.status(200).json({ message: 'Vendor order updated successfully' })
 }
+const acceptVendorOrder = async (req, res) => {
+  const vendorId = req.user.id
+  const { id } = req.params
 
-module.exports = { getVendorOrders, updateVendorOrderStatus, assignDriverToDelivery }
+  // Optional: Validate order ID
+  if (!validateId(id)) {
+    return res.status(400).json({ error: 'Invalid order ID format' })
+  }
+
+  // Make sure the vendor owns this order
+  const order = await knex('orders').where({ id, vendor_id: vendorId }).first()
+
+  if (!order) {
+    return res.status(404).json({ error: 'Order not found or not owned by vendor' })
+  }
+
+  if (order.order_status === 'processing') {
+    return res.status(400).json({ error: 'Order is already accepted' })
+  }
+
+  // Update the order status
+  await knex('orders').where({ id }).update({
+    order_status: 'processing', // or 'on_the_way', etc.
+    updated_at: knex.fn.now()
+  })
+
+  return res.json({ message: 'Order accepted successfully' })
+}
+
+module.exports = { getVendorOrders, updateVendorOrderStatus, assignDriverToDelivery, acceptVendorOrder }

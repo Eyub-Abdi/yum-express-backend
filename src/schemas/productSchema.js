@@ -26,4 +26,12 @@ const productQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(10),
   in_stock: Joi.string().valid('true', 'false').optional()
 })
-module.exports = { productSchema, productUpdateSchema, productQuerySchema }
+// Schema to validate publish/unpublish toggle
+const publishStatusSchema = Joi.object({
+  is_published: Joi.boolean().required()
+})
+const maxOrderQuantitySchema = Joi.object({
+  max_order_quantity: Joi.number().integer().min(1).max(3000).required()
+})
+
+module.exports = { productSchema, productUpdateSchema, publishStatusSchema, productQuerySchema, maxOrderQuantitySchema }

@@ -23,12 +23,16 @@ const productRoutesForAdmin = require('./routes/productRoutesForAdmin')
 const vendorRoutesForAdmin = require('./routes/vendorRoutesForAdmin')
 const adminOrderRoutes = require('./routes/adminOrderRoutes')
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes')
+const vendorDashboardRoutes = require('./routes/vendorDashboardRoutes')
 const { orderConfirmationMsg } = require('./utils/textMessages')
 const supportRoutes = require('./routes/supportRoutes')
+const riderDashboardRoutes = require('./routes/riderDashboardRoutes')
+const verificationRoutes = require('./routes/verificationRoutes')
 
 const { sendEmail } = require('./services/emailService')
 const generateDefaultPassword = require('./utils/passwordGenerator')
 const { buildWelcomeMessage } = require('./utils/welcomeMessages')
+const generateOtp = require('./utils/otpGenerator')
 
 if (!config.jwt.secret) {
   debug('FATAL ERROR, JWT_SECRET IS NOT SET')
@@ -65,13 +69,15 @@ app.use('/api/order', orderRoutes)
 app.use('/api/store', storeRoutes)
 app.use('/api/sales', salesRoutes)
 app.use('/api/drivers', driverRoutes)
+app.use('/api/riders', riderDashboardRoutes)
 app.use('/api/admins', adminRoutes)
 app.use('/api/admin/products', productRoutesForAdmin)
 app.use('/api/admin/vendors', vendorRoutesForAdmin)
 app.use('/api/admin-orders', adminOrderRoutes)
 app.use('/api/admin-dashboard', adminDashboardRoutes)
+app.use('/api/vendor/dashboard', vendorDashboardRoutes)
 app.use('/api/support', supportRoutes)
-
+app.use('/api/verify', verificationRoutes)
 app.get('/', async (req, res) => {
   {
     message: 'Order confirmed and SMS sent.'
@@ -87,7 +93,7 @@ app.get('/', async (req, res) => {
   // })
   const password = generateDefaultPassword()
   // const response = await sendSMS('255657777687', orderConfirmationMsg)
-  res.status(200).json(buildWelcomeMessage('Juma', 'Matakoyako'))
+  res.status(200).json(generateOtp(5))
 })
 const port = process.env.PORT || 5000
 app.listen(port, () => debug(`Listening on port ${port}...`))

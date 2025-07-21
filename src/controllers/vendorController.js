@@ -3,6 +3,8 @@ const knex = require('../db/knex')
 const { vendorRegistrationSchema, vendorUpdateSchema, vendorEmailUpdateSchema, vendorLocationSchema } = require('../schemas/vendorSchema')
 const vendorQuerySchema = require('../schemas/vendorQuerySchema')
 const updatePasswordSchema = require('../schemas/updatePasswordSchema')
+const { nameUpdateSchema, businessNameSchema, emailUpdateSchema, phoneUpdateSchema, addressUpdateSchema } = require('../schemas/vendorProfileUpdateSchema')
+
 const { sendVerificationEmail, sendEmail } = require('../services/emailService') // Import the email service
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService') // Import token generation functions
 const { verifyEmail } = require('../services/emailVerificationService')
@@ -10,6 +12,7 @@ const { buildWelcomeMessage } = require('../utils/welcomeMessages')
 const { validateId } = require('../utils/validateId')
 const generateDefaultPassword = require('../utils/passwordGenerator')
 const { sendSMS } = require('../services/smsService')
+const generateOtp = require('../utils/otpGenerator')
 const path = require('path')
 const fs = require('fs')
 
@@ -166,7 +169,7 @@ const updateVendor = async (req, res) => {
   const updateData = {
     first_name: req.body.first_name || vendor.first_name,
     last_name: req.body.last_name || vendor.last_name,
-    phone: req.body.phone || vendor.phone,
+    // phone: req.body.phone || vendor.phone,
     address: req.body.address || vendor.address,
     category: req.body.category || vendor.category,
     business_name: req.body.business_name || vendor.business_name,
@@ -195,55 +198,57 @@ const updateVendor = async (req, res) => {
 }
 
 const updateVendorEmail = async (req, res) => {
-  const { id } = req.params
+  const { id } = req.user
   const { email } = req.body
+  console.log(req.user)
 
-  // Validate the ID
-  if (!validateId(id)) {
-    return res.status(400).json({ message: 'Invalid ID format' })
-  }
-  // Validate the email
-  const { error } = vendorEmailUpdateSchema.validate(req.body)
+  // 2. Validate the email format
+  const { error } = vendorEmailUpdateSchema.validate({ email })
   if (error) {
     return res.status(400).json({ message: error.details[0].message })
   }
 
-  // Check if the vendor exists
+  // 3. Check vendor existence
   const vendor = await knex('vendors').where({ id }).first()
   if (!vendor) {
     return res.status(404).json({ message: 'Vendor not found' })
   }
 
-  // Validate the new email
-  const emailExists = await knex('vendors').where({ email }).first()
-  if (emailExists) {
+  // 4. Ensure email is not already in use
+  const emailTaken = await knex('vendors').where({ email }).andWhereNot({ id }).first()
+  if (emailTaken) {
     return res.status(400).json({ message: 'Email is already in use' })
   }
 
-  // Generate the verification token and expiry time
-  const verificationToken = generateVerificationToken()
-  const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 48 hours validity
+  // 5. Generate OTP and expiry
+  const { code, expiry } = generateOtp(10) // 10 minutes
 
-  // Prepare updated data
-  const updatedData = {
+  // 6. Update vendor with new email, otp, and mark unverified
+  await knex('vendors').where({ id }).update({
     email,
-    verification_token: verificationToken,
-    verification_token_expiry: verificationTokenExpiry,
-    verified: false, // Reset verification status
+    otp_code: code,
+    otp_expiry: expiry,
+    verified: false,
     updated_at: new Date()
-  }
+  })
 
-  // Update vendor's email and verification data
-  await knex('vendors').where({ id }).update(updatedData)
-
-  // Send verification email to the new email address
+  // 7. Send OTP via email
   try {
-    await sendVerificationEmail(email, vendor.first_name, verificationToken, 'vendors')
+    // await sendOtpEmail(email, vendor.first_name, code)
+    await sendEmail({
+      recipientEmail: email,
+      firstName: vendor.first_name,
+      type: 'otp',
+      payload: {
+        otp: code,
+        expiresIn: 10
+      }
+    })
   } catch (err) {
-    return res.status(500).json({ message: 'Error sending verification email' })
+    return res.status(500).json({ message: 'Failed to send OTP email' })
   }
 
-  res.json({ message: 'Email updated successfully. Please verify the new email address.' })
+  res.json({ message: 'Verification code sent to new email. Please verify.' })
 }
 
 const deleteVendor = async (req, res) => {
@@ -392,6 +397,102 @@ const getVendorProfile = async (req, res) => {
   res.json({ vendor: vendorProfile })
 }
 
+// ====VENDOR PROFILE UPDATION====
+
+const updateVendorName = async (req, res, next) => {
+  const { error } = nameUpdateSchema.validate(req.body)
+  if (error) return res.status(400).json({ error: error.details[0].message })
+
+  const { first_name, last_name } = req.body
+  const id = req.user.id
+
+  await knex('vendors').where({ id }).update({
+    first_name,
+    last_name,
+    updated_at: new Date()
+  })
+
+  res.json({ message: 'Name updated successfully' })
+}
+
+const updateBusinessName = async (req, res, next) => {
+  const { error } = businessNameSchema.validate(req.body)
+  if (error) return res.status(400).json({ error: error.details[0].message })
+
+  const { business_name } = req.body
+  const id = req.user.id
+
+  await knex('vendors').where({ id }).update({
+    business_name,
+    updated_at: new Date()
+  })
+
+  res.json({ message: 'Business name updated successfully' })
+}
+
+const updateVendorPhone = async (req, res) => {
+  const { id } = req.user
+  const { phone } = req.body
+
+  // 1. Validate phone format
+  const { error } = phoneUpdateSchema.validate({ phone })
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message })
+  }
+
+  // 2. Check if vendor exists
+  const vendor = await knex('vendors').where({ id }).first()
+  if (!vendor) {
+    return res.status(404).json({ message: 'Vendor not found' })
+  }
+
+  // 3. Ensure phone number is not already taken
+  const phoneTaken = await knex('vendors').where({ phone }).andWhereNot({ id }).first()
+  if (phoneTaken) {
+    return res.status(400).json({ message: 'Phone number is already in use' })
+  }
+
+  // 4. Generate OTP and expiry
+  const { code, expiry } = generateOtp(5) // 10 minutes
+
+  // 5. Update the vendor with new phone and OTP
+  await knex('vendors').where({ id }).update({
+    phone,
+    otp_code: code,
+    otp_expiry: expiry,
+    verified: false,
+    updated_at: new Date()
+  })
+
+  // 6. Send OTP via SMS
+  const otpMessage = `Yum Express: Nambari yako ya kuthibitisha ni ${code}. Inatimia baada ya dakika 5.`
+
+  try {
+    await sendSMS(phone.replace('+', ''), otpMessage) // assumes number like '2556...'
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to send OTP SMS' })
+  }
+
+  res.json({ message: 'Verification code sent to your new phone. Please verify.' })
+}
+
+module.exports = updateVendorPhone
+
+const updateVendorAddress = async (req, res, next) => {
+  const { error } = addressUpdateSchema.validate(req.body)
+  if (error) return res.status(400).json({ error: error.details[0].message })
+
+  const { address } = req.body
+  const id = req.user.id
+
+  await knex('vendors').where({ id }).update({
+    address,
+    updated_at: new Date()
+  })
+
+  res.json({ message: 'Address updated successfully' })
+}
+
 module.exports = {
   registerVendor,
   getVendorsWithFilter,
@@ -403,5 +504,11 @@ module.exports = {
   getVendorProfile,
   deactivateOwnVendorAccount,
   updateVendorPassword,
-  verifyVendorEmail
+  verifyVendorEmail,
+
+  // ====VENDOR PROFILE UPDATION====
+  updateVendorName,
+  updateBusinessName,
+  updateVendorPhone,
+  updateVendorAddress
 }
