@@ -465,7 +465,7 @@ const updateVendorPhone = async (req, res) => {
   })
 
   // 6. Send OTP via SMS
-  const otpMessage = `Yum Express: Your varification code is ${code}`
+  const otpMessage = `Yum Express: Nambari yako ya kuthibitisha ni ${code}. Inatimia baada ya dakika 5.`
 
   try {
     await sendSMS(phone.replace('+', ''), otpMessage) // assumes number like '2556...'

@@ -16,10 +16,10 @@ const emailUpdateSchema = Joi.object({
 
 const phoneUpdateSchema = Joi.object({
   phone: Joi.string()
-    .pattern(/^255\d{9}$/)
+    .pattern(/^255\d{9}$/) // Example for Tanzania format
     .required()
     .messages({
-      'string.pattern.base': 'Phone number must start with 255 followed by 9 digits',
+      'string.pattern.base': 'Phone number must be in +255 format with 9 digits after',
       'string.empty': 'Phone number is required'
     })
 })
