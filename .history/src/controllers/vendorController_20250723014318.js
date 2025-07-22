@@ -396,6 +396,7 @@ const getVendorProfile = async (req, res) => {
 
   const { password_hash, verification_token, verification_token_expiry, deleted_at, deleted_by, otp_code, otp_expiry, ...vendorProfile } = vendor
   const openStatus = await getVendorOpenStatus(id)
+  console.log('Open Status:', openStatus)
   res.json({ vendor: vendorProfile, status: openStatus }) // Include open status in the response
 }
 

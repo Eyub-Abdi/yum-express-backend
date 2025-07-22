@@ -394,7 +394,7 @@ const getVendorProfile = async (req, res) => {
     return res.status(404).json({ error: 'Vendor not found' })
   }
 
-  const { password_hash, verification_token, verification_token_expiry, deleted_at, deleted_by, otp_code, otp_expiry, ...vendorProfile } = vendor
+  const { password_hash, verification_token, verification_token_expiry, deleted_at, deleted_by, ...vendorProfile } = vendor
   const openStatus = await getVendorOpenStatus(id)
   res.json({ vendor: vendorProfile, status: openStatus }) // Include open status in the response
 }

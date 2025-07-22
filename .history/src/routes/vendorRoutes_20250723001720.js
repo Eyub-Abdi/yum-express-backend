@@ -26,7 +26,7 @@ router.put('/update-address', authenticateUser, updateVendorAddress)
 router.put('/update-business-name', authenticateUser, updateBusinessName)
 router.put('/change-phone', authenticateUser, updateVendorPhone)
 router.put('/update-business-hours', authenticateUser, updateVendorHours)
-router.put('/location', authenticateUser, vendorOnly, updateVendorLocation)
+router.put('/location', vendorOnly, updateVendorLocation)
 
 router.delete('/:id', authenticateUser, deleteVendor)
 // ====VENDOR PROFILE UPDATION====

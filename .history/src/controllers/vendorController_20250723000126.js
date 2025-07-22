@@ -5,7 +5,6 @@ const { vendorUpdateSchema, vendorEmailUpdateSchema, vendorLocationSchema } = re
 const vendorQuerySchema = require('../schemas/vendorQuerySchema')
 const updatePasswordSchema = require('../schemas/updatePasswordSchema')
 const { nameUpdateSchema, businessNameSchema, phoneUpdateSchema, businessHoursSchema, addressUpdateSchema } = require('../schemas/vendorProfileUpdateSchema')
-const getVendorOpenStatus = require('../utils/getVendorOpenStatus')
 
 const { sendVerificationEmail, sendEmail } = require('../services/emailService') // Import the email service
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService') // Import token generation functions
@@ -394,9 +393,9 @@ const getVendorProfile = async (req, res) => {
     return res.status(404).json({ error: 'Vendor not found' })
   }
 
-  const { password_hash, verification_token, verification_token_expiry, deleted_at, deleted_by, otp_code, otp_expiry, ...vendorProfile } = vendor
-  const openStatus = await getVendorOpenStatus(id)
-  res.json({ vendor: vendorProfile, status: openStatus }) // Include open status in the response
+  const { password_hash, verification_token, verification_token_expiry, ...vendorProfile } = vendor
+
+  res.json({ vendor: vendorProfile })
 }
 
 // ====VENDOR PROFILE UPDATION====
@@ -532,23 +531,6 @@ const updateVendorHours = async (req, res) => {
   res.json({ message: 'Vendor hours updated successfully' })
 }
 
-const updateVendorLocation = async (req, res) => {
-  // Validate request body
-  const { error } = vendorLocationSchema.validate(req.body)
-  if (error) return res.status(400).json({ error: error.details[0].message })
-
-  const { lat, lng } = req.body
-  const id = req.user.id
-
-  await knex('vendors').where({ id }).update({
-    lat,
-    lng,
-    updated_at: new Date()
-  })
-
-  res.json({ message: 'Location updated successfully' })
-}
-
 module.exports = {
   registerVendor,
   getVendorsWithFilter,
@@ -567,6 +549,5 @@ module.exports = {
   updateBusinessName,
   updateVendorPhone,
   updateVendorHours,
-  updateVendorLocation,
   updateVendorAddress
 }
