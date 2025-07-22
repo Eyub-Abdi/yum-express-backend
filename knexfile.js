@@ -1,14 +1,11 @@
-// Update with your config settings.
-
-/**
- * @type { Object.<string, import("knex").Knex.Config> }
- */
 const config = require('./config/default')
 
 module.exports = {
   development: {
     client: 'postgresql',
     connection: {
+      host: config.db.host,
+      port: config.db.port,
       database: config.db.database,
       user: config.db.user,
       password: config.db.password
@@ -25,6 +22,8 @@ module.exports = {
   production: {
     client: 'postgresql',
     connection: {
+      host: config.db.host,
+      port: config.db.port,
       database: config.db.database,
       user: config.db.user,
       password: config.db.password
