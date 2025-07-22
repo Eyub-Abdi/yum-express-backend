@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const { registerVendor, getVendorById, updateVendor, updateVendorEmail, deleteVendor, updateVendorPassword, deactivateOwnVendorAccount, getVendorsWithFilter, getNearbyVendors, getVendorProfile, updateVendorName, updateBusinessName, updateVendorPhone, updateVendorAddress, getVendorHours, updateVendorHours } = require('../controllers/vendorController') // Import the vendor controller
+const { registerVendor, getVendorById, updateVendor, updateVendorEmail, deleteVendor, updateVendorPassword, deactivateOwnVendorAccount, getVendorsWithFilter, getNearbyVendors, getVendorProfile, updateVendorName, updateBusinessName, updateVendorPhone, updateVendorAddress } = require('../controllers/vendorController') // Import the vendor controller
 const { verifyVendorEmail } = require('../controllers/vendorController')
 const authenticateUser = require('../middleware/authenticateUser')
 const getUploadMiddleware = require('../middleware/upload')
@@ -24,8 +24,6 @@ router.put('/update-name', authenticateUser, updateVendorName)
 router.put('/update-address', authenticateUser, updateVendorAddress)
 router.put('/update-business-name', authenticateUser, updateBusinessName)
 router.put('/change-phone', authenticateUser, updateVendorPhone)
-router.put('/update-business-hours', authenticateUser, updateVendorHours)
-
 router.delete('/:id', authenticateUser, deleteVendor)
 // ====VENDOR PROFILE UPDATION====
 router.put('/:id', uploadBanner.single('banner'), updateVendor) // AUTHENTICATE USER HERE THIS IS TESTING WITOUT AUTH

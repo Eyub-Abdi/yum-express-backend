@@ -8,24 +8,21 @@ exports.up = async function (knex) {
 
     table.integer('vendor_id').unsigned().notNullable().references('id').inTable('vendors').onDelete('CASCADE')
 
-    table.string('category', 10).notNullable() // 'weekdays', 'saturday', 'sunday'
-
+    table.string('day', 10).notNullable()
     table.time('open_time').nullable()
     table.time('close_time').nullable()
-
     table.boolean('is_closed').notNullable().defaultTo(false)
 
     table.timestamp('created_at').defaultTo(knex.fn.now())
-    table.timestamp('updated_at').defaultTo(knex.fn.now())
 
-    table.unique(['vendor_id', 'category'])
+    table.unique(['vendor_id', 'day'])
   })
 
-  // PostgreSQL CHECK constraint
+  // Add CHECK constraint manually (PostgreSQL only)
   await knex.raw(`
     ALTER TABLE vendor_hours
-    ADD CONSTRAINT category_check
-    CHECK (category IN ('weekdays', 'saturday', 'sunday'))
+    ADD CONSTRAINT day_check
+    CHECK (day IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'))
   `)
 }
 

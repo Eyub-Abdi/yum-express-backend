@@ -492,6 +492,78 @@ const updateVendorAddress = async (req, res, next) => {
   res.json({ message: 'Address updated successfully' })
 }
 
+// const updateVendorHours = async (req, res, next) => {
+//   const { error } = vendorHourSchema.validate(req.body)
+//   if (error) return res.status(400).json({ error: error.details[0].message })
+
+//   const vendor_id = req.user.id
+//   const hoursData = req.body
+//   const categories = ['weekdays', 'saturday', 'sunday']
+
+//   for (const category of categories) {
+//     const { open_time, close_time } = hoursData[category]
+
+//     const existing = await knex('vendor_hours').where({ vendor_id, category }).first()
+
+//     if (existing) {
+//       await knex('vendor_hours').where({ vendor_id, category }).update({
+//         open_time,
+//         close_time,
+//         updated_at: new Date()
+//       })
+//     } else {
+//       await knex('vendor_hours').insert({
+//         vendor_id,
+//         category,
+//         open_time,
+//         close_time,
+//         created_at: new Date(),
+//         updated_at: new Date()
+//       })
+//     }
+//   }
+
+//   res.json({ message: 'Vendor hours updated successfully' })
+// }
+
+// const updateVendorHours = async (req, res, next) => {
+//   const { error } = businessHoursSchema.validate(req.body)
+//   if (error) return res.status(400).json({ error: error.details[0].message })
+
+//   const vendor_id = req.user.id
+//   const hoursData = req.body
+//   const categories = ['weekdays', 'saturday', 'sunday']
+
+//   for (const category of categories) {
+//     const { open_time, close_time, is_closed } = hoursData[category]
+
+//     const existing = await knex('vendor_hours').where({ vendor_id, category }).first()
+
+//     if (existing) {
+//       await knex('vendor_hours')
+//         .where({ vendor_id, category })
+//         .update({
+//           open_time: is_closed ? null : open_time,
+//           close_time: is_closed ? null : close_time,
+//           is_closed,
+//           updated_at: new Date()
+//         })
+//     } else {
+//       await knex('vendor_hours').insert({
+//         vendor_id,
+//         category,
+//         open_time: is_closed ? null : open_time,
+//         close_time: is_closed ? null : close_time,
+//         is_closed,
+//         created_at: new Date(),
+//         updated_at: new Date()
+//       })
+//     }
+//   }
+
+//   res.json({ message: 'Vendor hours updated successfully' })
+// }
+
 const updateVendorHours = async (req, res) => {
   const { error } = businessHoursSchema.validate(req.body)
   if (error) return res.status(400).json({ error: error.details[0].message })
@@ -531,6 +603,69 @@ const updateVendorHours = async (req, res) => {
   res.json({ message: 'Vendor hours updated successfully' })
 }
 
+// const getVendorHours = async (req, res) => {
+//   const vendor_id = req.params.id
+
+//   // Validate the ID format
+//   if (!validateId(vendor_id)) {
+//     return res.status(400).json({ message: 'Invalid ID format' })
+//   }
+
+//   const rows = await knex('vendor_hours').where({ vendor_id }).select('category', 'open_time', 'close_time', 'is_closed')
+
+//   const result = {}
+//   for (const row of rows) {
+//     result[row.category] = {
+//       open_time: row.open_time,
+//       close_time: row.close_time,
+//       is_closed: row.is_closed
+//     }
+//   }
+
+//   res.json(result)
+// }
+
+const getVendorHours = async (req, res) => {
+  const vendor_id = req.params.id
+
+  if (!validateId(vendor_id)) {
+    return res.status(400).json({ message: 'Invalid ID format' })
+  }
+
+  const rows = await knex('vendor_hours').where({ vendor_id }).select('category', 'open_time', 'close_time', 'is_closed')
+
+  // Organize hours by category (weekdays, saturday, sunday)
+  const result = {}
+  for (const row of rows) {
+    result[row.category] = {
+      open_time: row.open_time,
+      close_time: row.close_time,
+      is_closed: row.is_closed
+    }
+  }
+
+  // Determine today's category
+  const day = dayjs().day() // 0 (Sun) - 6 (Sat)
+  const todayCategory = day === 0 ? 'sunday' : day === 6 ? 'saturday' : 'weekdays'
+  const todayHours = result[todayCategory]
+
+  let is_open = false
+  if (todayHours && !todayHours.is_closed) {
+    const now = dayjs()
+    const open = dayjs(now.format('YYYY-MM-DD') + ' ' + todayHours.open_time)
+    const close = dayjs(now.format('YYYY-MM-DD') + ' ' + todayHours.close_time)
+
+    is_open = now.isAfter(open) && now.isBefore(close)
+  }
+
+  // Include open/closed status in response
+  res.json({
+    is_open,
+    current_day: todayCategory,
+    hours: result
+  })
+}
+
 module.exports = {
   registerVendor,
   getVendorsWithFilter,
@@ -549,5 +684,6 @@ module.exports = {
   updateBusinessName,
   updateVendorPhone,
   updateVendorHours,
+  getVendorHours,
   updateVendorAddress
 }

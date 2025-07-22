@@ -21,7 +21,7 @@ exports.up = async function (knex) {
     table.unique(['vendor_id', 'category'])
   })
 
-  // PostgreSQL CHECK constraint
+  // Add CHECK constraint manually (PostgreSQL only)
   await knex.raw(`
     ALTER TABLE vendor_hours
     ADD CONSTRAINT category_check

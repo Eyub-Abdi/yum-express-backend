@@ -1,6 +1,5 @@
 const knex = require('../db/knex')
 const { validateId } = require('../utils/validateId')
-const getVendorOpenStatus = require('../utils/getVendorOpenStatus')
 
 const getStore = async (req, res) => {
   const { id } = req.params
@@ -22,16 +21,13 @@ const getStore = async (req, res) => {
   const average_rating = reviewStats.average_rating ? Number(parseFloat(reviewStats.average_rating).toFixed(1)) : 0
   const total_reviews = reviewStats.total_reviews ? parseInt(reviewStats.total_reviews, 10) : 0
 
-  const openStatus = await getVendorOpenStatus(id)
-
   res.json({
     vendor,
     products,
     reviews: {
       average_rating,
       total_reviews
-    },
-    status: openStatus // ← includes is_open, current_day, and hours
+    }
   })
 }
 

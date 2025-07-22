@@ -1,10 +1,9 @@
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
-const dayjs = require('dayjs')
 const { vendorUpdateSchema, vendorEmailUpdateSchema, vendorLocationSchema } = require('../schemas/vendorSchema')
 const vendorQuerySchema = require('../schemas/vendorQuerySchema')
 const updatePasswordSchema = require('../schemas/updatePasswordSchema')
-const { nameUpdateSchema, businessNameSchema, phoneUpdateSchema, businessHoursSchema, addressUpdateSchema } = require('../schemas/vendorProfileUpdateSchema')
+const { nameUpdateSchema, businessNameSchema, phoneUpdateSchema, businessHourSchema, addressUpdateSchema } = require('../schemas/vendorProfileUpdateSchema')
 
 const { sendVerificationEmail, sendEmail } = require('../services/emailService') // Import the email service
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService') // Import token generation functions
@@ -492,18 +491,51 @@ const updateVendorAddress = async (req, res, next) => {
   res.json({ message: 'Address updated successfully' })
 }
 
-const updateVendorHours = async (req, res) => {
-  const { error } = businessHoursSchema.validate(req.body)
+// const updateVendorHours = async (req, res, next) => {
+//   const { error } = vendorHourSchema.validate(req.body)
+//   if (error) return res.status(400).json({ error: error.details[0].message })
+
+//   const vendor_id = req.user.id
+//   const hoursData = req.body
+//   const categories = ['weekdays', 'saturday', 'sunday']
+
+//   for (const category of categories) {
+//     const { open_time, close_time } = hoursData[category]
+
+//     const existing = await knex('vendor_hours').where({ vendor_id, category }).first()
+
+//     if (existing) {
+//       await knex('vendor_hours').where({ vendor_id, category }).update({
+//         open_time,
+//         close_time,
+//         updated_at: new Date()
+//       })
+//     } else {
+//       await knex('vendor_hours').insert({
+//         vendor_id,
+//         category,
+//         open_time,
+//         close_time,
+//         created_at: new Date(),
+//         updated_at: new Date()
+//       })
+//     }
+//   }
+
+//   res.json({ message: 'Vendor hours updated successfully' })
+// }
+
+const updateVendorHours = async (req, res, next) => {
+  const { error } = businessHourSchema.validate(req.body)
   if (error) return res.status(400).json({ error: error.details[0].message })
 
   const vendor_id = req.user.id
   const hoursData = req.body
-
-  const validCategories = ['weekdays', 'saturday', 'sunday']
-  const categories = Object.keys(hoursData).filter(cat => validCategories.includes(cat))
+  const categories = ['weekdays', 'saturday', 'sunday']
 
   for (const category of categories) {
     const { open_time, close_time, is_closed } = hoursData[category]
+
     const existing = await knex('vendor_hours').where({ vendor_id, category }).first()
 
     if (existing) {

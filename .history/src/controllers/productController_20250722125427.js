@@ -95,27 +95,6 @@ const getProducts = async (req, res) => {
 //   res.json(products)
 // }
 
-// const getProductById = async (req, res) => {
-//   const { id } = req.params
-
-//   if (!validateId(id)) {
-//     return res.status(400).json({ message: 'Invalid ID format' })
-//   }
-
-//   const product = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_disabled', 'is_published', 'max_order_quantity', 'image_url', 'created_at', 'updated_at').where({ id, is_disabled: false, is_published: true }).first()
-
-//   if (!product) {
-//     return res.status(404).json({ message: 'Product not found or not available' })
-//   }
-
-//   const status = await getVendorOpenStatus(product.vendor_id)
-
-//   res.json({
-//     ...product,
-//     status // ← includes is_open, current_day, and today_hours
-//   })
-// }
-
 const getProductById = async (req, res) => {
   const { id } = req.params
 
@@ -132,8 +111,8 @@ const getProductById = async (req, res) => {
   const status = await getVendorOpenStatus(product.vendor_id)
 
   res.json({
-    product,
-    status
+    ...product,
+    status // ← includes is_open, current_day, and today_hours
   })
 }
 

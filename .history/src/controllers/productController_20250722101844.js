@@ -1,8 +1,6 @@
 const knex = require('../db/knex')
 const { productSchema, productUpdateSchema, productQuerySchema, maxOrderQuantitySchema, publishStatusSchema } = require('../schemas/productSchema')
 const { validateId } = require('../utils/validateId')
-const getVendorOpenStatus = require('../utils/getVendorOpenStatus')
-
 const path = require('path')
 const fs = require('fs')
 
@@ -67,55 +65,6 @@ const getProducts = async (req, res) => {
   res.json(products)
 }
 
-// const getProductById = async (req, res) => {
-//   const { id } = req.params
-
-//   if (!validateId(id)) {
-//     return res.status(400).json({ message: 'Invalid ID format' })
-//   }
-
-//   const product = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_disabled', 'is_published', 'max_order_quantity', 'image_url', 'created_at', 'updated_at').where({ id, is_disabled: false, is_published: true }).first()
-
-//   if (!product) {
-//     return res.status(404).json({ message: 'Product not found or not available' })
-//   }
-
-//   res.json(product)
-// }
-
-// const getMyProducts = async (req, res) => {
-//   const vendor_id = req.user.id // Get vendor ID from authenticated user
-
-//   const products = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_disabled', 'max_order_quantity', 'image_url', 'created_at', 'updated_at').where({ vendor_id }) // Filter by vendor ID
-
-//   if (products.length === 0) {
-//     return res.status(404).json({ message: 'No products found for this vendor' })
-//   }
-
-//   res.json(products)
-// }
-
-// const getProductById = async (req, res) => {
-//   const { id } = req.params
-
-//   if (!validateId(id)) {
-//     return res.status(400).json({ message: 'Invalid ID format' })
-//   }
-
-//   const product = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_disabled', 'is_published', 'max_order_quantity', 'image_url', 'created_at', 'updated_at').where({ id, is_disabled: false, is_published: true }).first()
-
-//   if (!product) {
-//     return res.status(404).json({ message: 'Product not found or not available' })
-//   }
-
-//   const status = await getVendorOpenStatus(product.vendor_id)
-
-//   res.json({
-//     ...product,
-//     status // ← includes is_open, current_day, and today_hours
-//   })
-// }
-
 const getProductById = async (req, res) => {
   const { id } = req.params
 
@@ -129,13 +78,20 @@ const getProductById = async (req, res) => {
     return res.status(404).json({ message: 'Product not found or not available' })
   }
 
-  const status = await getVendorOpenStatus(product.vendor_id)
-
-  res.json({
-    product,
-    status
-  })
+  res.json(product)
 }
+
+// const getMyProducts = async (req, res) => {
+//   const vendor_id = req.user.id // Get vendor ID from authenticated user
+
+//   const products = await knex('products').select('id', 'vendor_id', 'name', 'description', 'price', 'stock', 'is_disabled', 'max_order_quantity', 'image_url', 'created_at', 'updated_at').where({ vendor_id }) // Filter by vendor ID
+
+//   if (products.length === 0) {
+//     return res.status(404).json({ message: 'No products found for this vendor' })
+//   }
+
+//   res.json(products)
+// }
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000
 const NEW_PRODUCT_DAYS = 4

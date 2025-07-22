@@ -30,33 +30,38 @@ const addressUpdateSchema = Joi.object({
   })
 })
 
-const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/ // Matches "HH:mm"
-
-const daySchema = Joi.object({
-  is_closed: Joi.boolean().required(),
-  open_time: Joi.string().pattern(timePattern).when('is_closed', {
-    is: false,
-    then: Joi.required(),
-    otherwise: Joi.forbidden()
+const vendorHourSchema = Joi.object({
+  weekdays: Joi.object({
+    open_time: Joi.string()
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .required(),
+    close_time: Joi.string()
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .required()
   }),
-  close_time: Joi.string().pattern(timePattern).when('is_closed', {
-    is: false,
-    then: Joi.required(),
-    otherwise: Joi.forbidden()
+  saturday: Joi.object({
+    open_time: Joi.string()
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .required(),
+    close_time: Joi.string()
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .required()
+  }),
+  sunday: Joi.object({
+    open_time: Joi.string()
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .required(),
+    close_time: Joi.string()
+      .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .required()
   })
 })
-
-const businessHoursSchema = Joi.object({
-  weekdays: daySchema,
-  saturday: daySchema,
-  sunday: daySchema
-}).xor('weekdays', 'saturday', 'sunday') // Only one allowed at a time
 
 module.exports = {
   nameUpdateSchema,
   businessNameSchema,
   emailUpdateSchema,
   phoneUpdateSchema,
-  businessHoursSchema,
+  vendorHourSchema,
   addressUpdateSchema
 }

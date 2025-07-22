@@ -46,17 +46,17 @@ const daySchema = Joi.object({
   })
 })
 
-const businessHoursSchema = Joi.object({
-  weekdays: daySchema,
-  saturday: daySchema,
-  sunday: daySchema
-}).xor('weekdays', 'saturday', 'sunday') // Only one allowed at a time
+const vendorHourSchema = Joi.object({
+  category: daySchema.required(),
+  saturday: daySchema.required(),
+  sunday: daySchema.required()
+})
 
 module.exports = {
   nameUpdateSchema,
   businessNameSchema,
   emailUpdateSchema,
   phoneUpdateSchema,
-  businessHoursSchema,
+  vendorHourSchema,
   addressUpdateSchema
 }
