@@ -327,6 +327,5 @@ module.exports = {
   updateCustomerName,
   updateCustomerPhone,
   updateCustomerEmail,
-  verifyCustomerEmail,
-  verifyCustomerOtp
+  verifyCustomerEmail
 }

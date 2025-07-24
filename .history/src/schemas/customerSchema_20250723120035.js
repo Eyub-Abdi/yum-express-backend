@@ -28,21 +28,4 @@ const passwordUpdateSchema = Joi.object({
   new_password: Joi.string().min(6).required()
 })
 
-const phoneUpdateSchema = Joi.object({
-  phone: Joi.string()
-    .pattern(/^[1-9]\d{7,14}$/) // 8 to 15 digits, no '+' allowed, starts with 1–9
-    .required()
-    .messages({
-      'string.pattern.base': 'Phone number must be a valid international format without + (e.g., 255712345678)',
-      'string.empty': 'Phone number is required'
-    })
-})
-
-const customerEmailUpdateSchema = Joi.object({
-  email: Joi.string().email().required().messages({
-    'string.email': 'Please enter a valid email address',
-    'any.required': 'Email is required'
-  })
-})
-
-module.exports = { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema, customerNameSchema, phoneUpdateSchema, customerEmailUpdateSchema }
+module.exports = { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema }

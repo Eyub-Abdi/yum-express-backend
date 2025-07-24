@@ -25,9 +25,6 @@ exports.up = async function (knex) {
     table.text('delivery_notes')
     table.timestamp('delivered_at')
 
-    // New confirmed_delivered column
-    table.boolean('confirmed_delivered').defaultTo(false)
-
     table.timestamp('created_at').defaultTo(knex.fn.now())
     table.timestamp('updated_at').defaultTo(knex.fn.now())
   })

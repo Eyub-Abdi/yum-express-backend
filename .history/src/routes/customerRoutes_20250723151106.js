@@ -8,7 +8,7 @@ const router = express.Router()
 // Customer routes
 router.post('/register', registerCustomer)
 router.get('/verify-email', verifyCustomerEmail)
-router.post('/verify/otp', authenticatUser, verifyCustomerOtp)
+router.post('/verify/otp', verifyCustomerOtp)
 router.get('/', getCustomers)
 router.get('/me', authenticatUser, getCustomerProfile) // Get the authenticated customer's profile
 router.get('/:id', getCustomerById)

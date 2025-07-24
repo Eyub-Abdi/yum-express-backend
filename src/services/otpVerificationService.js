@@ -8,18 +8,18 @@ const verifyOtp = async (entity, req, res) => {
     return res.status(400).json({ message: 'Invalid entity for OTP verification' })
   }
 
-  const { value, code } = req.body // e.g., { value: 'user@example.com', code: '123456' }
-  console.log(value)
-  if (!value || !code) {
+  const { email, otp } = req.body // e.g., { value: 'user@example.com', code: '123456' }
+
+  if (!email || !otp) {
     return res.status(400).json({ message: 'Email and OTP code are required' })
   }
 
   try {
     const user = await knex(entity)
       .where(builder => {
-        builder.where('email', value).orWhere('phone', value)
+        builder.where('email', email).orWhere('phone', email)
       })
-      .andWhere('otp_code', code)
+      .andWhere('otp_code', otp)
       .andWhere('otp_expiry', '>', new Date())
       .first()
 

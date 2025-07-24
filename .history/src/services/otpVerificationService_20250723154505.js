@@ -9,7 +9,8 @@ const verifyOtp = async (entity, req, res) => {
   }
 
   const { value, code } = req.body // e.g., { value: 'user@example.com', code: '123456' }
-  console.log(value)
+  // console.log(req.body)
+
   if (!value || !code) {
     return res.status(400).json({ message: 'Email and OTP code are required' })
   }

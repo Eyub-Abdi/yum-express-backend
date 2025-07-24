@@ -38,11 +38,4 @@ const phoneUpdateSchema = Joi.object({
     })
 })
 
-const customerEmailUpdateSchema = Joi.object({
-  email: Joi.string().email().required().messages({
-    'string.email': 'Please enter a valid email address',
-    'any.required': 'Email is required'
-  })
-})
-
-module.exports = { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema, customerNameSchema, phoneUpdateSchema, customerEmailUpdateSchema }
+module.exports = { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema, customerNameSchema, phoneUpdateSchema }

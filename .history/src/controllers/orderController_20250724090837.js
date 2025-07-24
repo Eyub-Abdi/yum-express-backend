@@ -4,6 +4,65 @@ const { assignDriverSchema } = require('../schemas/deliverySchema')
 
 const { validateId } = require('../utils/validateId')
 
+// const getVendorOrders = async (req, res) => {
+//   // Allow access only if the authenticated user is a vendor
+//   if (req.user?.type !== 'vendor') {
+//     return res.status(403).json({ error: 'Access denied: Vendors only' })
+//   }
+
+//   // Validate query parameters using Joi schema
+//   const { error, value } = getVendorOrdersSchema.validate(req.query)
+//   if (error) {
+//     return res.status(400).json({ error: error.details[0].message })
+//   }
+
+//   const vendorId = req.user.id
+
+//   // Destructure filter options from validated query parameters
+//   const { status, start_date, end_date, product_name, customer_name } = value
+
+//   // Build the query for vendor orders
+//   let query = knex('vendor_orders').where('vendor_orders.vendor_id', vendorId).join('orders', 'vendor_orders.order_id', 'orders.id').join('customers', 'orders.customer_id', 'customers.id').select('vendor_orders.id as vendor_order_id', 'vendor_orders.status as vendor_order_status', 'vendor_orders.tracking_number', 'vendor_orders.shipped_at', 'vendor_orders.delivered_at', 'vendor_orders.vendor_price', 'orders.id as order_id', 'orders.created_at as order_created_at', 'customers.id as customer_id', knex.raw("CONCAT(customers.first_name, ' ', customers.last_name) as customer_name"), 'customers.phone as customer_phone')
+
+//   // Apply filters based on query parameters
+//   if (status) {
+//     query = query.where('vendor_orders.status', status)
+//   }
+//   if (start_date) {
+//     query = query.where('orders.created_at', '>=', start_date)
+//   }
+//   if (end_date) {
+//     query = query.where('orders.created_at', '<=', end_date)
+//   }
+//   if (product_name) {
+//     query = query.join('order_items', 'order_items.order_id', 'orders.id').join('products', 'order_items.product_id', 'products.id').where('products.name', 'like', `%${product_name}%`)
+//   }
+//   if (customer_name) {
+//     query = query.whereRaw("CONCAT(customers.first_name, ' ', customers.last_name) LIKE ?", [`%${customer_name}%`])
+//   }
+
+//   // Execute the query to get vendor orders
+//   const vendorOrders = await query
+
+//   // Extract all relevant order IDs
+//   const orderIds = vendorOrders.map(v => v.order_id)
+
+//   // Fetch order items belonging to this vendor's products only
+//   const items = await knex('order_items').whereIn('order_items.order_id', orderIds).join('products', 'order_items.product_id', 'products.id').where('products.vendor_id', vendorId).select('order_items.order_id', 'order_items.product_id', 'products.name as product_name', 'order_items.quantity', 'order_items.price')
+
+//   // Group items under their respective orders
+//   const grouped = vendorOrders.map(order => {
+//     const orderItems = items.filter(i => i.order_id === order.order_id)
+//     return {
+//       ...order,
+//       items: orderItems
+//     }
+//   })
+
+//   // Respond with grouped vendor orders
+//   res.status(200).json(grouped)
+// }
+
 const getVendorOrders = async (req, res) => {
   if (req.user?.type !== 'vendor') {
     return res.status(403).json({ error: 'Access denied: Vendors only' })
@@ -71,6 +130,8 @@ const getVendorOrders = async (req, res) => {
 const assignDriverToDelivery = async (req, res) => {
   const { error, value } = assignDriverSchema.validate(req.body)
   if (error) {
+    console.log('Validation Error:', error.details) // 👈 Add this line
+
     return res.status(400).json({ error: error.details[0].message })
   }
 
@@ -169,19 +230,36 @@ const acceptVendorOrder = async (req, res) => {
 
   return res.json({ message: 'Order accepted successfully' })
 }
-
 const getCustomerOrderHistory = async (req, res) => {
   const customerId = req.user.id
 
-  const orders = await knex('orders as o').join('order_items as oi', 'o.id', 'oi.order_id').join('products as p', 'oi.product_id', 'p.id').leftJoin('deliveries as d', 'o.id', 'd.order_id').select('o.id as order_id', 'o.total_price', 'o.order_status', 'o.payment_status', 'o.created_at as order_created_at', 'oi.quantity', 'oi.price as item_price', 'p.name as product_name', 'p.image_url', 'd.status as delivery_status', 'd.delivered_at', 'd.confirmed_delivered').where('o.customer_id', customerId)
+  const orders = await knex('orders as o')
+    .join('order_items as oi', 'o.id', 'oi.order_id')
+    .join('products as p', 'oi.product_id', 'p.id')
+    .leftJoin('deliveries as d', 'o.id', 'd.order_id')
+    .select(
+      'o.id as order_id',
+      'o.total_price',
+      'o.order_status',
+      'o.payment_status',
+      'o.created_at as order_created_at',
 
-  const groupedMap = new Map()
+      'oi.quantity',
+      'oi.price as item_price',
 
-  orders.forEach(row => {
+      'p.name as product_name',
+      'p.image_url',
+
+      'd.status as delivery_status',
+      'd.delivered_at'
+    )
+    .where('o.customer_id', customerId)
+    .orderBy('o.created_at', 'desc')
+
+  const grouped = orders.reduce((acc, row) => {
     const orderId = row.order_id
-
-    if (!groupedMap.has(orderId)) {
-      groupedMap.set(orderId, {
+    if (!acc[orderId]) {
+      acc[orderId] = {
         order_id: row.order_id,
         total_price: row.total_price,
         order_status: row.order_status,
@@ -189,68 +267,21 @@ const getCustomerOrderHistory = async (req, res) => {
         order_created_at: row.order_created_at,
         delivery_status: row.delivery_status,
         delivered_at: row.delivered_at,
-        confirmed_delivered: row.confirmed_delivered,
         items: []
-      })
+      }
     }
 
-    groupedMap.get(orderId).items.push({
+    acc[orderId].items.push({
       product_name: row.product_name,
       image_url: row.image_url,
       quantity: row.quantity,
       price: row.item_price
     })
-  })
 
-  const sortedOrders = [...groupedMap.values()].sort((a, b) => {
-    const aDeliveredAndConfirmed = a.delivery_status === 'delivered' && a.confirmed_delivered === true
-    const bDeliveredAndConfirmed = b.delivery_status === 'delivered' && b.confirmed_delivered === true
+    return acc
+  }, {})
 
-    // If only one is fully delivered and confirmed, put it after
-    if (aDeliveredAndConfirmed && !bDeliveredAndConfirmed) return 1
-    if (!aDeliveredAndConfirmed && bDeliveredAndConfirmed) return -1
-
-    // Otherwise, sort by newest first
-    return new Date(b.order_created_at) - new Date(a.order_created_at)
-  })
-
-  res.json(sortedOrders)
+  res.json(Object.values(grouped))
 }
 
-const confirmDelivery = async (req, res) => {
-  const orderId = req.params.id
-  const { confirmed_delivered } = req.body
-  const userId = req.user.id
-
-  // Validate input
-  if (typeof confirmed_delivered !== 'boolean') {
-    return res.status(400).json({ message: 'confirmed_delivered must be a boolean' })
-  }
-
-  // Validate order ID
-  if (!validateId(orderId)) {
-    return res.status(400).json({ message: 'Invalid ID format' })
-  }
-
-  // Find delivery by order_id
-  const delivery = await knex('deliveries').where('order_id', orderId).first()
-
-  if (!delivery) {
-    return res.status(404).json({ message: 'Delivery not found' })
-  }
-
-  // Ensure this delivery belongs to the logged-in user
-  if (delivery.customer_id !== userId) {
-    return res.status(403).json({ message: 'You are not authorized to confirm this delivery' })
-  }
-
-  // Update confirmation
-  await knex('deliveries').where('order_id', orderId).update({
-    confirmed_delivered,
-    updated_at: new Date()
-  })
-
-  res.json({ message: 'Delivery confirmed successfully' })
-}
-
-module.exports = { getVendorOrders, updateVendorOrderStatus, assignDriverToDelivery, getCustomerOrderHistory, acceptVendorOrder, confirmDelivery }
+module.exports = { getVendorOrders, updateVendorOrderStatus, assignDriverToDelivery, acceptVendorOrder }

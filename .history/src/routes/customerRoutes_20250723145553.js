@@ -2,13 +2,14 @@
 const express = require('express')
 const { registerCustomer, getCustomerById, getCustomers, getCustomerProfile, updateCustomer, updatePassword, deleteCustomer, verifyCustomerEmail, updateCustomerName, updateCustomerPhone, updateCustomerEmail, verifyCustomerOtp } = require('../controllers/customerController')
 const authenticatUser = require('../middleware/authenticateUser')
+const { verifyOtp } = require('../controllers/verifyOtp')
 
 const router = express.Router()
 
 // Customer routes
 router.post('/register', registerCustomer)
 router.get('/verify-email', verifyCustomerEmail)
-router.post('/verify/otp', authenticatUser, verifyCustomerOtp)
+router.get('/verify-otp', verifyCustomerOtp)
 router.get('/', getCustomers)
 router.get('/me', authenticatUser, getCustomerProfile) // Get the authenticated customer's profile
 router.get('/:id', getCustomerById)

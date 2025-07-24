@@ -7,9 +7,7 @@ const { validateId } = require('../utils/validateId')
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
 const { sendVerificationEmail } = require('../services/emailService')
 const { verifyEmail } = require('../services/emailVerificationService')
-const { sendEmail } = require('../services/emailService')
 const generateOtp = require('../utils/otpGenerator')
-const { verifyOtp } = require('../services/otpVerificationService')
 
 const registerCustomer = async (req, res) => {
   const { error } = customerRegistrationSchema.validate(req.body)
@@ -184,10 +182,6 @@ const deleteCustomer = async (req, res) => {
 const verifyCustomerEmail = async (req, res) => {
   await verifyEmail('customers', req, res)
 }
-
-const verifyCustomerOtp = async (req, res) => {
-  await verifyOtp('customers', req, res)
-}
 // ==== CUSTOMER PROFILE UPDATION ====
 
 const updateCustomerName = async (req, res) => {
@@ -327,6 +321,5 @@ module.exports = {
   updateCustomerName,
   updateCustomerPhone,
   updateCustomerEmail,
-  verifyCustomerEmail,
-  verifyCustomerOtp
+  verifyCustomerEmail
 }

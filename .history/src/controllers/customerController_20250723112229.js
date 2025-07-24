@@ -2,14 +2,12 @@
 const debug = require('debug')('app')
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
-const { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema, customerNameSchema, phoneUpdateSchema, customerEmailUpdateSchema } = require('../schemas/customerSchema')
+const { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema } = require('../schemas/customerSchema')
 const { validateId } = require('../utils/validateId')
+const authorizeUser = require('../middleware/authenticateUser')
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
 const { sendVerificationEmail } = require('../services/emailService')
 const { verifyEmail } = require('../services/emailVerificationService')
-const { sendEmail } = require('../services/emailService')
-const generateOtp = require('../utils/otpGenerator')
-const { verifyOtp } = require('../services/otpVerificationService')
 
 const registerCustomer = async (req, res) => {
   const { error } = customerRegistrationSchema.validate(req.body)
@@ -185,136 +183,6 @@ const verifyCustomerEmail = async (req, res) => {
   await verifyEmail('customers', req, res)
 }
 
-const verifyCustomerOtp = async (req, res) => {
-  await verifyOtp('customers', req, res)
-}
-// ==== CUSTOMER PROFILE UPDATION ====
-
-const updateCustomerName = async (req, res) => {
-  const { error } = customerNameSchema.validate(req.body)
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message })
-  }
-
-  const id = req.user.id
-  const { first_name, last_name } = req.body
-
-  const customer = await knex('customers').where('id', id).first()
-  if (!customer) {
-    return res.status(404).json({ message: 'Customer not found' })
-  }
-
-  await knex('customers').where('id', id).update({
-    first_name,
-    last_name,
-    updated_at: new Date() // update timestamp
-  })
-
-  res.json({ message: 'Name updated successfully' })
-}
-// const updateCustomerPhone = async (req, res) => {
-//   const { error } = phoneUpdateSchema.validate(req.body)
-//   if (error) {
-//     return res.status(400).json({ error: error.details[0].message })
-//   }
-
-//   const id = req.user.id
-//   const { phone } = req.body
-
-//   const customer = await knex('customers').where('id', id).first()
-//   if (!customer) {
-//     return res.status(404).json({ message: 'Customer not found' })
-//   }
-
-//   await knex('customers').where('id', id).update({
-//     phone,
-//     updated_at: new Date()
-//   })
-
-//   res.json({ message: 'Phone number updated successfully' })
-// }
-
-const updateCustomerPhone = async (req, res) => {
-  const { id } = req.user
-  const { phone } = req.body
-
-  const { error } = phoneUpdateSchema.validate({ phone })
-  if (error) {
-    return res.status(400).json({ message: error.details[0].message })
-  }
-
-  const customer = await knex('customers').where({ id }).first()
-  if (!customer) {
-    return res.status(404).json({ message: 'Customer not found' })
-  }
-
-  // Ensure phone number is not already taken by another customer
-  const phoneTaken = await knex('customers').where({ phone }).andWhereNot({ id }).first()
-
-  if (phoneTaken) {
-    return res.status(400).json({ message: 'Phone number is already in use' })
-  }
-
-  // Update the phone number
-  await knex('customers').where({ id }).update({
-    phone,
-    updated_at: new Date()
-  })
-
-  res.json({ message: 'Phone number updated successfully' })
-}
-
-const updateCustomerEmail = async (req, res) => {
-  const { id } = req.user
-  const { email } = req.body
-
-  const { error } = customerEmailUpdateSchema.validate({ email })
-  if (error) {
-    return res.status(400).json({ message: error.details[0].message })
-  }
-
-  const customer = await knex('customers').where({ id }).first()
-  if (!customer) {
-    return res.status(404).json({ message: 'Customer not found' })
-  }
-
-  const emailTaken = await knex('customers').where({ email }).andWhereNot({ id }).first()
-
-  if (emailTaken) {
-    return res.status(400).json({ message: 'Email is already in use' })
-  }
-
-  // 4. Generate OTP
-  const { code, expiry } = generateOtp(10)
-
-  // 5. Update customer record
-  await knex('customers').where({ id }).update({
-    email,
-    otp_code: code,
-    otp_expiry: expiry,
-    verified: false,
-    updated_at: new Date()
-  })
-
-  // 6. Send OTP email
-  try {
-    await sendEmail({
-      recipientEmail: email,
-      firstName: customer.first_name,
-      type: 'otp',
-      payload: {
-        otp: code,
-        expiresIn: 10
-      }
-    })
-  } catch (err) {
-    console.error('Error sending OTP email:', err)
-    return res.status(500).json({ message: 'Failed to send OTP email' })
-  }
-
-  res.json({ message: 'Verification code sent to new email. Please verify.' })
-}
-
 module.exports = {
   registerCustomer,
   getCustomers,
@@ -323,10 +191,5 @@ module.exports = {
   updatePassword,
   deleteCustomer,
   getCustomerProfile,
-  // ==== CUSTOMER PROFILE UPDATION ====
-  updateCustomerName,
-  updateCustomerPhone,
-  updateCustomerEmail,
-  verifyCustomerEmail,
-  verifyCustomerOtp
+  verifyCustomerEmail
 }

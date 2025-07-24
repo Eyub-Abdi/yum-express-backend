@@ -16,9 +16,6 @@ exports.up = async function (knex) {
     table.boolean('verified').defaultTo(false)
     table.timestamp('verification_token_expiry')
 
-    table.string('otp_code', 10)
-    table.timestamp('otp_expiry')
-
     // Indexes to match Postgres output
     table.index('email', 'idx_customers_email')
     table.index('phone', 'idx_customers_phone')

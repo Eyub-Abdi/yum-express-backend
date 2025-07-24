@@ -2,14 +2,12 @@
 const debug = require('debug')('app')
 const bcrypt = require('bcrypt')
 const knex = require('../db/knex')
-const { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema, customerNameSchema, phoneUpdateSchema, customerEmailUpdateSchema } = require('../schemas/customerSchema')
+const { customerRegistrationSchema, customerUpdateSchema, passwordUpdateSchema, customerNameSchema, phoneUpdateSchema } = require('../schemas/customerSchema')
 const { validateId } = require('../utils/validateId')
+const authorizeUser = require('../middleware/authenticateUser')
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
 const { sendVerificationEmail } = require('../services/emailService')
 const { verifyEmail } = require('../services/emailVerificationService')
-const { sendEmail } = require('../services/emailService')
-const generateOtp = require('../utils/otpGenerator')
-const { verifyOtp } = require('../services/otpVerificationService')
 
 const registerCustomer = async (req, res) => {
   const { error } = customerRegistrationSchema.validate(req.body)
@@ -184,10 +182,6 @@ const deleteCustomer = async (req, res) => {
 const verifyCustomerEmail = async (req, res) => {
   await verifyEmail('customers', req, res)
 }
-
-const verifyCustomerOtp = async (req, res) => {
-  await verifyOtp('customers', req, res)
-}
 // ==== CUSTOMER PROFILE UPDATION ====
 
 const updateCustomerName = async (req, res) => {
@@ -268,16 +262,19 @@ const updateCustomerEmail = async (req, res) => {
   const { id } = req.user
   const { email } = req.body
 
+  // 1. Validate email format
   const { error } = customerEmailUpdateSchema.validate({ email })
   if (error) {
     return res.status(400).json({ message: error.details[0].message })
   }
 
+  // 2. Check if customer exists
   const customer = await knex('customers').where({ id }).first()
   if (!customer) {
     return res.status(404).json({ message: 'Customer not found' })
   }
 
+  // 3. Check if email is already in use by another customer
   const emailTaken = await knex('customers').where({ email }).andWhereNot({ id }).first()
 
   if (emailTaken) {
@@ -308,7 +305,6 @@ const updateCustomerEmail = async (req, res) => {
       }
     })
   } catch (err) {
-    console.error('Error sending OTP email:', err)
     return res.status(500).json({ message: 'Failed to send OTP email' })
   }
 
@@ -326,7 +322,5 @@ module.exports = {
   // ==== CUSTOMER PROFILE UPDATION ====
   updateCustomerName,
   updateCustomerPhone,
-  updateCustomerEmail,
-  verifyCustomerEmail,
-  verifyCustomerOtp
+  verifyCustomerEmail
 }

@@ -71,6 +71,8 @@ const getVendorOrders = async (req, res) => {
 const assignDriverToDelivery = async (req, res) => {
   const { error, value } = assignDriverSchema.validate(req.body)
   if (error) {
+    console.log('Validation Error:', error.details) // 👈 Add this line
+
     return res.status(400).json({ error: error.details[0].message })
   }
 
@@ -169,19 +171,90 @@ const acceptVendorOrder = async (req, res) => {
 
   return res.json({ message: 'Order accepted successfully' })
 }
+// const getCustomerOrderHistory = async (req, res) => {
+//   const customerId = req.user.id
+
+//   const orders = await knex('orders as o')
+//     .join('order_items as oi', 'o.id', 'oi.order_id')
+//     .join('products as p', 'oi.product_id', 'p.id')
+//     .leftJoin('deliveries as d', 'o.id', 'd.order_id')
+//     .select(
+//       'o.id as order_id',
+//       'o.total_price',
+//       'o.order_status',
+//       'o.payment_status',
+//       'o.created_at as order_created_at',
+
+//       'oi.quantity',
+//       'oi.price as item_price',
+
+//       'p.name as product_name',
+//       'p.image_url',
+
+//       'd.status as delivery_status',
+//       'd.delivered_at'
+//     )
+//     .where('o.customer_id', customerId)
+//     .orderBy('o.created_at', 'desc')
+
+//   const grouped = orders.reduce((acc, row) => {
+//     const orderId = row.order_id
+//     if (!acc[orderId]) {
+//       acc[orderId] = {
+//         order_id: row.order_id,
+//         total_price: row.total_price,
+//         order_status: row.order_status,
+//         payment_status: row.payment_status,
+//         order_created_at: row.order_created_at,
+//         delivery_status: row.delivery_status,
+//         delivered_at: row.delivered_at,
+//         items: []
+//       }
+//     }
+
+//     acc[orderId].items.push({
+//       product_name: row.product_name,
+//       image_url: row.image_url,
+//       quantity: row.quantity,
+//       price: row.item_price
+//     })
+
+//     return acc
+//   }, {})
+
+//   res.json(Object.values(grouped))
+// }
 
 const getCustomerOrderHistory = async (req, res) => {
   const customerId = req.user.id
 
-  const orders = await knex('orders as o').join('order_items as oi', 'o.id', 'oi.order_id').join('products as p', 'oi.product_id', 'p.id').leftJoin('deliveries as d', 'o.id', 'd.order_id').select('o.id as order_id', 'o.total_price', 'o.order_status', 'o.payment_status', 'o.created_at as order_created_at', 'oi.quantity', 'oi.price as item_price', 'p.name as product_name', 'p.image_url', 'd.status as delivery_status', 'd.delivered_at', 'd.confirmed_delivered').where('o.customer_id', customerId)
+  const orders = await knex('orders as o')
+    .join('order_items as oi', 'o.id', 'oi.order_id')
+    .join('products as p', 'oi.product_id', 'p.id')
+    .leftJoin('deliveries as d', 'o.id', 'd.order_id')
+    .select(
+      'o.id as order_id',
+      'o.total_price',
+      'o.order_status',
+      'o.payment_status',
+      'o.created_at as order_created_at',
 
-  const groupedMap = new Map()
+      'oi.quantity',
+      'oi.price as item_price',
 
-  orders.forEach(row => {
+      'p.name as product_name',
+      'p.image_url',
+
+      'd.status as delivery_status',
+      'd.delivered_at'
+    )
+    .where('o.customer_id', customerId)
+    .orderBy('o.created_at', 'desc')
+
+  const grouped = orders.reduce((acc, row) => {
     const orderId = row.order_id
-
-    if (!groupedMap.has(orderId)) {
-      groupedMap.set(orderId, {
+    if (!acc[orderId]) {
+      acc[orderId] = {
         order_id: row.order_id,
         total_price: row.total_price,
         order_status: row.order_status,
@@ -189,68 +262,21 @@ const getCustomerOrderHistory = async (req, res) => {
         order_created_at: row.order_created_at,
         delivery_status: row.delivery_status,
         delivered_at: row.delivered_at,
-        confirmed_delivered: row.confirmed_delivered,
         items: []
-      })
+      }
     }
 
-    groupedMap.get(orderId).items.push({
+    acc[orderId].items.push({
       product_name: row.product_name,
       image_url: row.image_url,
       quantity: row.quantity,
       price: row.item_price
     })
-  })
 
-  const sortedOrders = [...groupedMap.values()].sort((a, b) => {
-    const aDeliveredAndConfirmed = a.delivery_status === 'delivered' && a.confirmed_delivered === true
-    const bDeliveredAndConfirmed = b.delivery_status === 'delivered' && b.confirmed_delivered === true
+    return acc
+  }, {})
 
-    // If only one is fully delivered and confirmed, put it after
-    if (aDeliveredAndConfirmed && !bDeliveredAndConfirmed) return 1
-    if (!aDeliveredAndConfirmed && bDeliveredAndConfirmed) return -1
-
-    // Otherwise, sort by newest first
-    return new Date(b.order_created_at) - new Date(a.order_created_at)
-  })
-
-  res.json(sortedOrders)
+  res.json(Object.values(grouped))
 }
 
-const confirmDelivery = async (req, res) => {
-  const orderId = req.params.id
-  const { confirmed_delivered } = req.body
-  const userId = req.user.id
-
-  // Validate input
-  if (typeof confirmed_delivered !== 'boolean') {
-    return res.status(400).json({ message: 'confirmed_delivered must be a boolean' })
-  }
-
-  // Validate order ID
-  if (!validateId(orderId)) {
-    return res.status(400).json({ message: 'Invalid ID format' })
-  }
-
-  // Find delivery by order_id
-  const delivery = await knex('deliveries').where('order_id', orderId).first()
-
-  if (!delivery) {
-    return res.status(404).json({ message: 'Delivery not found' })
-  }
-
-  // Ensure this delivery belongs to the logged-in user
-  if (delivery.customer_id !== userId) {
-    return res.status(403).json({ message: 'You are not authorized to confirm this delivery' })
-  }
-
-  // Update confirmation
-  await knex('deliveries').where('order_id', orderId).update({
-    confirmed_delivered,
-    updated_at: new Date()
-  })
-
-  res.json({ message: 'Delivery confirmed successfully' })
-}
-
-module.exports = { getVendorOrders, updateVendorOrderStatus, assignDriverToDelivery, getCustomerOrderHistory, acceptVendorOrder, confirmDelivery }
+module.exports = { getVendorOrders, updateVendorOrderStatus, assignDriverToDelivery, getCustomerOrderHistory, acceptVendorOrder }
