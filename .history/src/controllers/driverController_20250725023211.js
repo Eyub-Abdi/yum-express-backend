@@ -256,4 +256,4 @@ const verifyDriverEmail = async (req, res) => {
   verifyEmail('drivers', req, res)
 }
 
-module.exports = { registerDriver, getAllDrivers, getDriverById, getDriverProfile, deleteDriver, updateDriver, recoverDriver, verifyDriverEmail }
+module.exports = { registerDriver, getAllDrivers, getDriverById, getDriverProfile, deleteDriver, recoverDriver, verifyDriverEmail }

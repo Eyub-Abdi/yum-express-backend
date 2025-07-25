@@ -1,8 +1,9 @@
 const knex = require('../db/knex')
 const bcrypt = require('bcrypt')
-const { driverRegistrationSchema, driverQuerySchema, driverUpdateSchema } = require('../schemas/driverSchema')
+const { driverRegistrationSchema, driverQuerySchema } = require('../schemas/driverSchema')
 const { validateId } = require('../utils/validateId')
 
+const { sendVerificationEmail } = require('../services/emailService')
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
 const { verifyEmail } = require('../services/emailVerificationService')
 const generateDefaultPassword = require('../utils/passwordGenerator')
@@ -36,9 +37,6 @@ const registerDriver = async (req, res) => {
   const verificationToken = generateVerificationToken()
   const verificationTokenExpiry = generateVerificationTokenExpiry(48) // 48 hours validity
 
-  // return res.status(500).json({
-  //   message: 'Error sending verification email. Please try again later.'
-  // })
   // Get the current time for created_at
   const currentTime = new Date().toISOString()
 
@@ -59,6 +57,7 @@ const registerDriver = async (req, res) => {
     })
     .returning('*')
 
+  // Send the verification email
   const message = buildWelcomeMessage(first_name, password)
   await sendSMS(phone, message)
   // Send verification email
@@ -79,54 +78,6 @@ const registerDriver = async (req, res) => {
       is_active: newDriver.is_active
     }
   })
-}
-
-const updateDriver = async (req, res, next) => {
-  const { id } = req.params
-
-  const { error } = driverUpdateSchema.validate(req.body)
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message })
-  }
-
-  if (!validateId(id)) {
-    return res.status(400).json({ error: 'Invalid driver ID' })
-  }
-  const { first_name, last_name, email, phone, vehicle_details, status, is_active } = req.body
-
-  const existingDriver = await knex('drivers').where({ id }).first()
-  if (!existingDriver) {
-    return res.status(404).json({ message: 'Driver not found.' })
-  }
-
-  if (email || phone) {
-    const conflict = await knex('drivers')
-      .where(function () {
-        if (email) this.orWhere({ email })
-        if (phone) this.orWhere({ phone })
-      })
-      .andWhereNot({ id })
-      .first()
-
-    if (conflict) {
-      return res.status(400).json({ message: 'Email or phone already in use by another driver.' })
-    }
-  }
-
-  const updateData = {
-    ...(first_name && { first_name }),
-    ...(last_name && { last_name }),
-    ...(email && { email }),
-    ...(phone && { phone }),
-    ...(vehicle_details && { vehicle_details }),
-    ...(status && { status }),
-    ...(is_active !== undefined && { is_active }),
-    updated_at: new Date().toISOString()
-  }
-
-  await knex('drivers').where({ id }).update(updateData)
-
-  return res.status(200).json({ message: 'Driver updated successfully!' })
 }
 
 const getAllDrivers = async (req, res) => {
@@ -256,4 +207,4 @@ const verifyDriverEmail = async (req, res) => {
   verifyEmail('drivers', req, res)
 }
 
-module.exports = { registerDriver, getAllDrivers, getDriverById, getDriverProfile, deleteDriver, updateDriver, recoverDriver, verifyDriverEmail }
+module.exports = { registerDriver, getAllDrivers, getDriverById, getDriverProfile, deleteDriver, recoverDriver, verifyDriverEmail }

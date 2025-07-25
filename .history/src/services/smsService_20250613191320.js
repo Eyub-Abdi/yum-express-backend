@@ -22,6 +22,9 @@ function getSMSApiUrl() {
 console.log(getSMSApiUrl())
 
 function sendSMS(toPhoneNumber, message, reference = 'yum-express-ref') {
+  // WAITTING FOR SENDOER ID TO BE REGISTERED IN TIGO OR NEXT SMS
+  // COME BACK LATER WHEN WE HAVE A VERIFIED SENDER ID FOR THIS
+  //  FEATURE TO BE COMPLETED.
   const data = {
     from: config.sms.senderId,
     to: toPhoneNumber,

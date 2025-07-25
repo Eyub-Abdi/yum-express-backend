@@ -4,9 +4,7 @@ const driverRegistrationSchema = Joi.object({
   first_name: Joi.string().min(3).max(100).required(),
   last_name: Joi.string().min(3).max(100).required(),
   email: Joi.string().email().required(),
-  phone: Joi.string()
-    .pattern(/^255\d{9}$/)
-    .required(),
+  phone: Joi.string().pattern(/^255\d{9}$/),
   vehicle_details: Joi.string().max(255).required()
 })
 
@@ -23,6 +21,8 @@ const driverUpdateSchema = Joi.object({
   last_name: Joi.string().max(50),
   email: Joi.string().email(),
   phone: Joi.string().pattern(/^255\d{9}$/),
-  vehicle_details: Joi.string()
+  vehicle_details: Joi.string(),
+  status: Joi.string().valid('active', 'inactive', 'suspended'),
+  is_active: Joi.boolean()
 })
 module.exports = { driverRegistrationSchema, driverQuerySchema, driverUpdateSchema }

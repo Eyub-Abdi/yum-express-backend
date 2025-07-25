@@ -4,7 +4,10 @@ function buildWelcomeMessage(first_name, defaultPassword) {
 Welcome to our platform! Your account has been created successfully.
 
 Your default login password is: ${defaultPassword}
-You can log in using your email address and the password provided above. Please make sure to change your password after your first login for security purposes.
+
+You can log in here: https://yum-express.com/vendors/login
+
+Please do NOT share this password with anyone. For your security, log in as soon as possible and change your password.
 
 Thank you!`
 }

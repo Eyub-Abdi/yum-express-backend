@@ -1,8 +1,9 @@
 const knex = require('../db/knex')
 const bcrypt = require('bcrypt')
-const { driverRegistrationSchema, driverQuerySchema, driverUpdateSchema } = require('../schemas/driverSchema')
+const { driverRegistrationSchema, driverQuerySchema } = require('../schemas/driverSchema')
 const { validateId } = require('../utils/validateId')
 
+const { sendVerificationEmail } = require('../services/emailService')
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
 const { verifyEmail } = require('../services/emailVerificationService')
 const generateDefaultPassword = require('../utils/passwordGenerator')
@@ -256,4 +257,4 @@ const verifyDriverEmail = async (req, res) => {
   verifyEmail('drivers', req, res)
 }
 
-module.exports = { registerDriver, getAllDrivers, getDriverById, getDriverProfile, deleteDriver, updateDriver, recoverDriver, verifyDriverEmail }
+module.exports = { registerDriver, getAllDrivers, getDriverById, getDriverProfile, deleteDriver, recoverDriver, verifyDriverEmail }

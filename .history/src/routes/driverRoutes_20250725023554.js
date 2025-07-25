@@ -12,6 +12,6 @@ router.get('/', authenticateUser, requireAdminRole('admin'), getAllDrivers)
 router.get('/me', authenticateUser, getDriverProfile)
 router.get('/:id', authenticateUser, requireAdminRole('admin'), getDriverById)
 router.put('/:id', authenticateUser, requireAdminRole('superadmin'), updateDriver)
-router.delete('/delete/:id', authenticateUser, requireAdminRole('superadmin'), deleteDriver)
+router.put('/delete/:id', authenticateUser, requireAdminRole('superadmin'), deleteDriver)
 router.put('/recover/:id', authenticateUser, requireAdminRole('superadmin'), recoverDriver)
 module.exports = router
