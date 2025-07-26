@@ -2,7 +2,6 @@
 const express = require('express')
 const { registerCustomer, getCustomerById, getCustomers, getCustomerProfile, updateCustomer, updatePassword, deleteCustomer, verifyCustomerEmail, updateCustomerName, updateCustomerPhone, updateCustomerEmail, verifyCustomerOtp } = require('../controllers/customerController')
 const authenticatUser = require('../middleware/authenticateUser')
-const { requireAdminRole } = require('../middleware/requireAdminRole')
 
 const router = express.Router()
 

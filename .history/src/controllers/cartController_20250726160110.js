@@ -265,7 +265,7 @@ const removeCartItem = async (req, res) => {
 
   const cart = user ? await knex('carts').where({ id: cart_id, customer_id: user.id }).first() : await knex('carts').where({ id: cart_id, session_token: sessionToken }).first()
 
-  if (!cart) return res.status(404).json({ error: 'Cart not found' + sessionToken })
+  if (!cart) return res.status(404).json({ error: 'Cart not found', sessionToken })
 
   const existingItem = await knex('cart_items').where({ cart_id, product_id }).first()
   if (!existingItem) return res.status(404).json({ error: 'Cart item not found' })

@@ -39,8 +39,8 @@ const { verifySessionToken } = require('../utils/generateSessionToken')
 const verifySessionTokenMiddleware = async (req, res, next) => {
   const sessionToken = req.cookies.session_token || null
   console.log('Incoming session token:', sessionToken)
-  console.log('Req', req.cookies.session_token)
-  // return
+  console.log('Req', req.cookies)
+  return
   if (sessionToken) {
     const cart = await knex('carts').select('session_token', 'signature').where({ session_token: sessionToken }).first()
 
@@ -72,7 +72,7 @@ const verifySessionTokenMiddleware = async (req, res, next) => {
       return res.status(403).json({ message: 'Invalid or tampered session token' })
     }
 
-    // req.sessionToken = sessionToken
+    req.sessionToken = sessionToken
     return next()
   }
 

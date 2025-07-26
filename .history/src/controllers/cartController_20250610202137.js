@@ -7,6 +7,7 @@ const createCart = async (req, res) => {
   let cartData = {}
 
   if (user) {
+    // Authenticated user: Check if they already have an active cart
     const existingCart = await knex('carts').where({ customer_id: user.id }).andWhere('expires_at', '>', knex.fn.now()).first()
 
     if (existingCart) {
@@ -15,8 +16,8 @@ const createCart = async (req, res) => {
 
     cartData.customer_id = user.id
   } else {
+    // Guest user
     let existingCart = null
-
     if (sessionToken) {
       existingCart = await knex('carts').where({ session_token: sessionToken }).andWhere('expires_at', '>', knex.fn.now()).first()
     }
@@ -25,10 +26,19 @@ const createCart = async (req, res) => {
       return res.status(200).json({ cart: existingCart })
     }
 
-    // Use the sessionToken from middleware, do NOT generate or set cookie here
-    cartData.session_token = sessionToken || '123'
-    console.log('Creating cart for session token:', sessionToken)
-    cartData.signature = generateSignature(sessionToken)
+    // Generate session token if not present
+    const newSessionToken = sessionToken || generateSessionToken()
+    cartData.session_token = newSessionToken
+
+    // Generate signature for session token
+    const signature = generateSignature(newSessionToken)
+    cartData.signature = signature
+
+    // Set cookie
+    res.cookie('session_token', newSessionToken, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    })
   }
 
   cartData.expires_at = knex.raw("CURRENT_TIMESTAMP + INTERVAL '7 days'")
@@ -141,7 +151,7 @@ const getCart = async (req, res) => {
 
   const cartItems = await knex('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id').select('cart_items.id', 'cart_items.product_id', 'cart_items.quantity', 'products.name', 'products.vendor_id', 'products.price', 'products.max_order_quantity', 'products.image_url')
 
-  //  Calculate subtotal (sum of item prices * quantity)
+  // 🧮 Calculate subtotal (sum of item prices * quantity)
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   // Optional: Add delivery/tax/discounts logic here
@@ -265,7 +275,7 @@ const removeCartItem = async (req, res) => {
 
   const cart = user ? await knex('carts').where({ id: cart_id, customer_id: user.id }).first() : await knex('carts').where({ id: cart_id, session_token: sessionToken }).first()
 
-  if (!cart) return res.status(404).json({ error: 'Cart not found' + sessionToken })
+  if (!cart) return res.status(404).json({ error: 'Cart not found' })
 
   const existingItem = await knex('cart_items').where({ cart_id, product_id }).first()
   if (!existingItem) return res.status(404).json({ error: 'Cart item not found' })

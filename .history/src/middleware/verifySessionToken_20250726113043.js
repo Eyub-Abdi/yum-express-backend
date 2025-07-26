@@ -39,8 +39,7 @@ const { verifySessionToken } = require('../utils/generateSessionToken')
 const verifySessionTokenMiddleware = async (req, res, next) => {
   const sessionToken = req.cookies.session_token || null
   console.log('Incoming session token:', sessionToken)
-  console.log('Req', req.cookies.session_token)
-  // return
+
   if (sessionToken) {
     const cart = await knex('carts').select('session_token', 'signature').where({ session_token: sessionToken }).first()
 
@@ -72,7 +71,7 @@ const verifySessionTokenMiddleware = async (req, res, next) => {
       return res.status(403).json({ message: 'Invalid or tampered session token' })
     }
 
-    // req.sessionToken = sessionToken
+    req.sessionToken = sessionToken
     return next()
   }
 
@@ -81,8 +80,3 @@ const verifySessionTokenMiddleware = async (req, res, next) => {
 }
 
 module.exports = verifySessionTokenMiddleware
-// This middleware checks for a session token in the request cookies, validates it against the database,
-// and ensures the token's signature is valid. If the token is invalid or not found,
-// it clears the cookie and responds with an appropriate error message. If valid, it attaches the
-// session token to the request object and calls the next middleware or route handler.
-// This approach ensures that the session token is securely managed and validated before proceeding with any cart operations

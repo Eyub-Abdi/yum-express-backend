@@ -72,7 +72,7 @@ const verifySessionTokenMiddleware = async (req, res, next) => {
       return res.status(403).json({ message: 'Invalid or tampered session token' })
     }
 
-    // req.sessionToken = sessionToken
+    req.sessionToken = sessionToken
     return next()
   }
 

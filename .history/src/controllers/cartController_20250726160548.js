@@ -259,7 +259,8 @@ const updateCartItems = async (req, res) => {
 const removeCartItem = async (req, res) => {
   const { cart_id, product_id } = req.body
   const { sessionToken, user } = req
-
+  console.log('Removing item from cart:', { cart_id, product_id, sessionToken, user })
+  return res.status(500).json({ error: 'This endpoint is temporarily disabled' })
   const { error } = cartItemRemoveSchema.validate(req.body)
   if (error) return res.status(400).json({ error: error.details[0].message })
 

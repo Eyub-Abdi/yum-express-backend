@@ -2,6 +2,98 @@ const knex = require('../db/knex')
 const { generateSessionToken, generateSignature } = require('../utils/generateSessionToken')
 const { cartItemSchema, cartItemUpdateSchema, cartItemRemoveSchema, updateCartItemsSchema } = require('../schemas/cartItemSchema') // Import Joi schema from schemas directory
 
+// const createCart = async (req, res) => {
+//   const { sessionToken, user } = req
+//   let cartData = {}
+//   if (user) {
+//     // Authenticated user: Check if they already have an active cart
+//     const existingCart = await knex('carts').where({ customer_id: user.id }).andWhere('expires_at', '>', knex.fn.now()).first()
+
+//     if (existingCart) {
+//       return res.status(200).json({ cart: existingCart })
+//     }
+
+//     cartData.customer_id = user.id
+//   } else {
+//     // Guest user
+//     let existingCart = null
+//     if (sessionToken) {
+//       existingCart = await knex('carts').where({ session_token: sessionToken }).andWhere('expires_at', '>', knex.fn.now()).first()
+//     }
+
+//     if (existingCart) {
+//       return res.status(200).json({ cart: existingCart })
+//     }
+
+//     // Generate session token if not present
+//     const newSessionToken = sessionToken || generateSessionToken()
+//     cartData.session_token = newSessionToken
+
+//     // Generate signature for session token
+//     const signature = generateSignature(newSessionToken)
+//     cartData.signature = signature
+
+//     // Set cookie
+//     res.cookie('session_token', newSessionToken, {
+//       httpOnly: true,
+//       sameSite: 'Lax',
+//       secure: false,
+//       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+//     })
+//   }
+
+//   cartData.expires_at = knex.raw("CURRENT_TIMESTAMP + INTERVAL '7 days'")
+
+//   const [cart] = await knex('carts').insert(cartData).returning('*')
+
+//   return res.status(201).json({ cart })
+// }
+
+// const createCart = async (req, res) => {
+//   const { sessionToken, user } = req
+//   let cartData = {}
+
+//   if (user) {
+//     const existingCart = await knex('carts').where({ customer_id: user.id }).andWhere('expires_at', '>', knex.fn.now()).first()
+
+//     if (existingCart) {
+//       return res.status(200).json({ cart: existingCart })
+//     }
+
+//     cartData.customer_id = user.id
+//   } else {
+//     let existingCart = null
+
+//     // Only fetch if sessionToken exists
+//     if (sessionToken) {
+//       existingCart = await knex('carts').where({ session_token: sessionToken }).andWhere('expires_at', '>', knex.fn.now()).first()
+//     }
+
+//     if (existingCart) {
+//       return res.status(200).json({ cart: existingCart })
+//     }
+
+//     // Only here: generate a new token and set cookie
+//     const newSessionToken = generateSessionToken()
+//     const signature = generateSignature(newSessionToken)
+
+//     cartData.session_token = newSessionToken
+//     cartData.signature = signature
+
+//     res.cookie('session_token', newSessionToken, {
+//       httpOnly: true,
+//       sameSite: 'Lax',
+//       secure: false,
+//       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+//     })
+//   }
+//   cartData.expires_at = knex.raw("CURRENT_TIMESTAMP + INTERVAL '7 days'")
+
+//   const [cart] = await knex('carts').insert(cartData).returning('*')
+
+//   return res.status(201).json({ cart })
+// }
+
 const createCart = async (req, res) => {
   const { sessionToken, user } = req
   let cartData = {}
@@ -26,8 +118,7 @@ const createCart = async (req, res) => {
     }
 
     // Use the sessionToken from middleware, do NOT generate or set cookie here
-    cartData.session_token = sessionToken || '123'
-    console.log('Creating cart for session token:', sessionToken)
+    cartData.session_token = sessionToken
     cartData.signature = generateSignature(sessionToken)
   }
 
@@ -265,7 +356,7 @@ const removeCartItem = async (req, res) => {
 
   const cart = user ? await knex('carts').where({ id: cart_id, customer_id: user.id }).first() : await knex('carts').where({ id: cart_id, session_token: sessionToken }).first()
 
-  if (!cart) return res.status(404).json({ error: 'Cart not found' + sessionToken })
+  if (!cart) return res.status(404).json({ error: 'Cart not found' })
 
   const existingItem = await knex('cart_items').where({ cart_id, product_id }).first()
   if (!existingItem) return res.status(404).json({ error: 'Cart item not found' })

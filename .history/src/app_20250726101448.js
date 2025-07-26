@@ -55,12 +55,7 @@ debug(config.sms.senderId)
 
 app.use(express.json())
 app.use(cookiePerser())
-app.use(
-  cors({
-    origin: 'http://localhost:3000', // or your frontend URL
-    credentials: true
-  })
-)
+app.use(cors({ credentials: true }))
 // SERVER STATIC FILES
 app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')))
 app.use('/api/auth', authRoutes)

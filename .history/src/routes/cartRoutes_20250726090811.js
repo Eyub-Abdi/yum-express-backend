@@ -5,7 +5,7 @@ const authOrGuest = require('../middleware/guestMiddleware')
 const verifySessionTokenMiddleware = require('../middleware/verifySessionToken')
 const authenticateUser = require('../middleware/authenticateUser')
 
-router.post('/create-cart', authOrGuest, createCart)
+router.post('/create-cart', verifySessionTokenMiddleware, authOrGuest, createCart)
 router.post('/add-to-cart', authOrGuest, clearAndAddToCart)
 router.get('/get-cart', authOrGuest, getCart)
 router.put('/update-cart-items', authOrGuest, updateCartItem)

@@ -33,7 +33,7 @@ const authOrGuest = async (req, res, next) => {
 
   // Guest user flow
   let sessionToken = req.cookies?.session_token
-  console.log(sessionToken ? 'Existing guest session token found' : 'No guest session token found')
+
   if (sessionToken) {
     console.log('Reusing existing guest session token:', sessionToken)
   } else {
