@@ -28,8 +28,6 @@ const { orderConfirmationMsg } = require('./utils/textMessages')
 const supportRoutes = require('./routes/supportRoutes')
 const riderDashboardRoutes = require('./routes/riderDashboardRoutes')
 const verificationRoutes = require('./routes/verificationRoutes')
-const deliveryRoutes = require('./routes/deliveryRoutes')
-const webhookRoutes = require('./routes/webhookRoutes')
 
 const { sendEmail } = require('./services/emailService')
 const generateDefaultPassword = require('./utils/passwordGenerator')
@@ -65,7 +63,6 @@ app.use(
 )
 // SERVER STATIC FILES
 app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')))
-app.use('/api/webhook', webhookRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/customers', customerRoutes)
 app.use('/api/vendors', vendoRoutes)
@@ -74,7 +71,6 @@ app.use('/api/reviews', reviewRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/checkout', checkoutRoutes)
 app.use('/api/order', orderRoutes)
-app.use('/api/delivery', deliveryRoutes) // Delivery routes
 app.use('/api/store', storeRoutes)
 app.use('/api/sales', salesRoutes)
 app.use('/api/drivers', driverRoutes)
@@ -103,7 +99,7 @@ app.get('/', async (req, res) => {
 
   const password = generateDefaultPassword()
   const response = await sendSMS('255657777687', orderConfirmationMsg)
-  res.status(200).json(response.data)
+  res.status(200).json(password)
 })
 const port = process.env.PORT || 5000
 app.listen(port, () => debug(`Listening on port ${port}...`))

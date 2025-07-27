@@ -126,7 +126,7 @@
 
 // module.exports = { checkoutCart }
 
-const knex = require('../db/knex')
+const knex = require('../db')
 const { checkoutSchema } = require('../schemas/checkoutSchema')
 const { calculateDeliveryFee } = require('../utils/distance')
 const { handleCashPayment, handleMobilePayment, handleCreditCardPayment } = require('../services/checkoutService')

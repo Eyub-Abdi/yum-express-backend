@@ -65,7 +65,7 @@ app.use(
 )
 // SERVER STATIC FILES
 app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')))
-app.use('/api/webhook', webhookRoutes)
+app.use('/api/webhooks', webhookRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/customers', customerRoutes)
 app.use('/api/vendors', vendoRoutes)

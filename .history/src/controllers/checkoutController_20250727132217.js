@@ -126,11 +126,6 @@
 
 // module.exports = { checkoutCart }
 
-const knex = require('../db/knex')
-const { checkoutSchema } = require('../schemas/checkoutSchema')
-const { calculateDeliveryFee } = require('../utils/distance')
-const { handleCashPayment, handleMobilePayment, handleCreditCardPayment } = require('../services/checkoutService')
-
 const checkoutCart = async (req, res) => {
   const { error } = checkoutSchema.validate(req.body)
   if (error) return res.status(400).json({ error: error.details[0].message })

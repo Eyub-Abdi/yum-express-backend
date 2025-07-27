@@ -126,10 +126,10 @@
 
 // module.exports = { checkoutCart }
 
-const knex = require('../db/knex')
+const knex = require('../db') // or your knex instance path
 const { checkoutSchema } = require('../schemas/checkoutSchema')
-const { calculateDeliveryFee } = require('../utils/distance')
-const { handleCashPayment, handleMobilePayment, handleCreditCardPayment } = require('../services/checkoutService')
+const { calculateDeliveryFee } = require('../utils/distance') // your delivery fee logic
+const { handleCashPayment, handleMobilePayment, handleCreditCardPayment } = require('../services/paymentService')
 
 const checkoutCart = async (req, res) => {
   const { error } = checkoutSchema.validate(req.body)

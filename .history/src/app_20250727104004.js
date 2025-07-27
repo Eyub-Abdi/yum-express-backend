@@ -29,7 +29,6 @@ const supportRoutes = require('./routes/supportRoutes')
 const riderDashboardRoutes = require('./routes/riderDashboardRoutes')
 const verificationRoutes = require('./routes/verificationRoutes')
 const deliveryRoutes = require('./routes/deliveryRoutes')
-const webhookRoutes = require('./routes/webhookRoutes')
 
 const { sendEmail } = require('./services/emailService')
 const generateDefaultPassword = require('./utils/passwordGenerator')
@@ -65,7 +64,6 @@ app.use(
 )
 // SERVER STATIC FILES
 app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')))
-app.use('/api/webhook', webhookRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/customers', customerRoutes)
 app.use('/api/vendors', vendoRoutes)
