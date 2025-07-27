@@ -42,46 +42,6 @@ async function createOrderAndRelated(trx, cart, items, deliveryData, totalPrice)
   return order
 }
 
-async function handleMobilePayment(trx, cart, items, deliveryData, totalPrice, phoneNumber) {
-  // Order reference must be alphanumeric only, no dashes
-  const orderReference = `ORD${Date.now()}${cart.customer_id}`
-
-  // Initiate payment (USSD push)
-  const paymentResult = await processPayment(totalPrice, phoneNumber, orderReference)
-
-  if (paymentResult.success) {
-    // Save pending payment info for webhook to process later
-    await trx('pending_payments').insert({
-      cart_id: cart.id,
-      order_reference: orderReference,
-      transaction_id: paymentResult.transaction_id,
-      amount: totalPrice,
-      delivery_fee: deliveryData.delivery_fee || 0,
-      distance_km: deliveryData.distance_km || 0,
-      created_at: trx.fn.now()
-    })
-
-    await trx.commit()
-
-    return {
-      status: 202,
-      response: {
-        message: 'Payment initiated. Awaiting customer confirmation via USSD.',
-        transaction_id: paymentResult.transaction_id,
-        order_reference: orderReference
-      }
-    }
-  }
-
-  await trx.rollback()
-  return {
-    status: 400,
-    response: {
-      error: paymentResult.message || 'Failed to initiate payment'
-    }
-  }
-}
-
 async function handleCashPayment(trx, cart, items, deliveryData, totalPrice) {
   const order = await createOrderAndRelated(trx, cart, items, deliveryData, totalPrice)
 
@@ -104,6 +64,65 @@ async function handleCashPayment(trx, cart, items, deliveryData, totalPrice) {
       total: totalPrice
     }
   }
+}
+
+async function handleMobilePayment(trx, cart, items, deliveryData, totalPrice, phoneNumber) {
+  const order = await createOrderAndRelated(trx, cart, items, deliveryData, totalPrice)
+
+  const paymentResult = await processPayment(totalPrice, phoneNumber, order.id)
+  console.log(paymentResult)
+  return paymentResult
+  if (paymentResult.success === true) {
+    await trx('payments').insert({
+      order_id: order.id,
+      amount: totalPrice,
+      payment_method: paymentResult.payment_method,
+      status: 'Completed',
+      transaction_id: paymentResult.transaction_id,
+      created_at: trx.fn.now()
+    })
+
+    await trx('orders').where({ id: order.id }).update({
+      payment_status: 'paid',
+      updated_at: trx.fn.now()
+    })
+
+    for (const item of items) {
+      await trx('products').where({ id: item.product_id }).decrement('stock', item.quantity)
+    }
+
+    // Clear cart
+    await trx('cart_items').where({ cart_id: cart.id }).del()
+    await trx('carts').where({ id: cart.id }).del()
+
+    await trx.commit()
+
+    return {
+      status: 200,
+      response: {
+        message: 'Checkout successful and payment processed',
+        order_id: order.id,
+        total: totalPrice
+      }
+    }
+  }
+
+  if (paymentResult.success === null) {
+    await trx.commit()
+    return {
+      status: 202,
+      response: {
+        message: paymentResult.message,
+        order_id: order.id,
+        payment_status: 'pending',
+        transaction_id: paymentResult.transaction_id
+      }
+    }
+  }
+
+  // Payment failed
+  await trx.rollback()
+  return { status: 402, response: { error: paymentResult.message || 'Payment failed' } }
 }
 
 async function handleCreditCardPayment(trx, cart, items, deliveryData, totalPrice, cardDetails) {

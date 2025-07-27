@@ -10,7 +10,7 @@ exports.up = async function (knex) {
 
     table.integer('cart_id').unsigned().notNullable().references('id').inTable('carts').onDelete('CASCADE')
 
-    table.string('transaction_id', 100).nullable()
+    table.string('transaction_id', 100).nullable() // newly added column
 
     table.decimal('amount', 10, 2).notNullable()
 

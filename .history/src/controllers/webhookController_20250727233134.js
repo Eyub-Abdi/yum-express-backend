@@ -1,0 +1,181 @@
+// const knex = require('../db/knex')
+// const { createOrderAndRelated } = require('../services/checkoutService')
+
+// const clickPesaWebhookHandler = async (req, res) => {
+//   const payload = req.body
+//   const { event_type, status, transaction_id, reference, amount } = payload
+
+//   // We only handle payment completed or payment failed events
+//   if (event_type !== 'payment.completed' && event_type !== 'payment.failed') {
+//     return res.status(400).json({ message: 'Ignored event' })
+//   }
+
+//   const trx = await knex.transaction()
+
+//   try {
+//     const pending = await trx('pending_payments').where({ order_reference: reference }).first()
+//     if (!pending) {
+//       await trx.rollback()
+//       return res.status(404).json({ message: 'Pending payment not found' })
+//     }
+
+//     if (event_type === 'payment.completed' && status === 'completed') {
+//       // Payment success flow
+//       const cart = await trx('carts').where({ id: pending.cart_id }).first()
+//       const items = await trx('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id')
+
+//       const deliveryData = {
+//         phone: cart.delivery_phone,
+//         address: cart.address,
+//         street_name: cart.street_name,
+//         delivery_notes: cart.delivery_notes,
+//         lat: cart.lat,
+//         lng: cart.lng,
+//         delivery_fee: pending.delivery_fee || 0,
+//         distance_km: pending.distance_km || 0
+//       }
+
+//       const order = await createOrderAndRelated(trx, cart, items, deliveryData, amount)
+
+//       await trx('payments').insert({
+//         order_id: order.id,
+//         amount,
+//         payment_method: 'USSD',
+//         status: 'Completed',
+//         transaction_id,
+//         created_at: trx.fn.now()
+//       })
+
+//       await trx('orders').where({ id: order.id }).update({
+//         payment_status: 'paid',
+//         updated_at: trx.fn.now()
+//       })
+
+//       await trx('pending_payments').where({ id: pending.id }).del()
+
+//       await trx.commit()
+
+//       return res.status(200).json({ status: 'order created' })
+//     } else if (event_type === 'payment.failed' || status === 'failed') {
+//       // Payment failure flow
+//       await trx('pending_payments').where({ id: pending.id }).del()
+
+//       // Optional: Insert a record in payments or logs table to track failed payments
+//       await trx('payments').insert({
+//         order_id: null, // No order created on failure
+//         amount,
+//         payment_method: 'USSD',
+//         status: 'Failed',
+//         transaction_id,
+//         created_at: trx.fn.now()
+//       })
+
+//       await trx.commit()
+
+//       // You can also add logic here to notify user by email or other channels if you want
+
+//       return res.status(200).json({ status: 'payment failed handled' })
+//     } else {
+//       await trx.rollback()
+//       return res.status(400).json({ message: 'Unsupported event or status' })
+//     }
+//   } catch (err) {
+//     await trx.rollback()
+//     console.error('Webhook error:', err)
+//     return res.status(500).json({ error: 'Webhook processing failed' })
+//   }
+// }
+
+// module.exports = { clickPesaWebhookHandler }
+
+const knex = require('../db/knex')
+const { createOrderAndRelated } = require('../services/checkoutService')
+
+const clickPesaWebhookHandler = async (req, res) => {
+  const payload = req.body
+  const { event_type, status, transaction_id, reference, amount } = payload
+  console.log('Received ClickPesa webhook:', payload)
+  const normalizedEvent = event_type?.toLowerCase()
+  const normalizedStatus = status?.toLowerCase()
+
+  // We only handle payment completed or payment failed events
+  if (normalizedEvent !== 'payment.completed' && normalizedEvent !== 'payment.failed') {
+    return res.status(400).json({ message: 'Ignored event' })
+  }
+
+  const trx = await knex.transaction()
+
+  try {
+    const pending = await trx('pending_payments').where({ order_reference: reference }).first()
+    if (!pending) {
+      await trx.rollback()
+      return res.status(404).json({ message: 'Pending payment not found' })
+    }
+
+    if (normalizedEvent === 'payment.completed' && normalizedStatus === 'completed') {
+      // Payment success flow
+      const cart = await trx('carts').where({ id: pending.cart_id }).first()
+      const items = await trx('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id')
+
+      const deliveryData = {
+        phone: cart.delivery_phone,
+        address: cart.address,
+        street_name: cart.street_name,
+        delivery_notes: cart.delivery_notes,
+        lat: cart.lat,
+        lng: cart.lng,
+        delivery_fee: pending.delivery_fee || 0,
+        distance_km: pending.distance_km || 0
+      }
+
+      const order = await createOrderAndRelated(trx, cart, items, deliveryData, amount)
+
+      await trx('payments').insert({
+        order_id: order.id,
+        amount,
+        payment_method: 'USSD',
+        status: 'Completed',
+        transaction_id,
+        created_at: trx.fn.now()
+      })
+
+      await trx('orders').where({ id: order.id }).update({
+        payment_status: 'paid',
+        updated_at: trx.fn.now()
+      })
+
+      await trx('pending_payments').where({ id: pending.id }).del()
+
+      await trx.commit()
+
+      return res.status(200).json({ status: 'order created' })
+    }
+
+    if (normalizedEvent === 'payment.failed' || normalizedStatus === 'failed') {
+      // Payment failure flow
+      await trx('pending_payments').where({ id: pending.id }).del()
+
+      await trx('payments').insert({
+        order_id: null,
+        amount,
+        payment_method: 'USSD',
+        status: 'Failed',
+        transaction_id,
+        created_at: trx.fn.now()
+      })
+
+      await trx.commit()
+
+      return res.status(200).json({ status: 'payment failed handled' })
+    }
+
+    await trx.rollback()
+    return res.status(400).json({ message: 'Unsupported event or status' })
+  } catch (err) {
+    await trx.rollback()
+    console.error('Webhook error:', err)
+    return res.status(500).json({ error: 'Webhook processing failed' })
+  }
+}
+
+module.exports = { clickPesaWebhookHandler }

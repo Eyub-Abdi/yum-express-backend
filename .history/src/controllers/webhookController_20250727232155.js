@@ -3,45 +3,26 @@ const { createOrderAndRelated } = require('../services/checkoutService')
 
 const clickPesaWebhookHandler = async (req, res) => {
   const payload = req.body
+  const { event_type, status, transaction_id, reference, amount } = payload
+  console.log('📩 Webhook received:', req.body)
+  return res.status(200).json({ message: 'Webhook received' })
 
-  console.log('Received ClickPesa webhook:', payload)
-
-  const { event, data } = payload || {}
-
-  if (!data) {
-    return res.status(400).json({ message: 'Missing data in webhook payload' })
-  }
-
-  const { status, id: transaction_id, orderReference, amount } = data
-
-  // Validate essential values
-  if (!event || !transaction_id || !orderReference) {
-    console.warn('Missing essential fields')
-    return res.status(400).json({
-      message: 'Missing event, transaction_id, or orderReference in payload'
-    })
-  }
-
-  const normalizedStatus = status?.toLowerCase()
-  const normalizedEvent = event?.toLowerCase()
-
-  if (!normalizedEvent.includes('payment')) {
-    return res.status(400).json({ message: 'Ignored non-payment event' })
+  // We only handle payment completed or payment failed events
+  if (event_type !== 'payment.completed' && event_type !== 'payment.failed') {
+    return res.status(400).json({ message: 'Ignored event' })
   }
 
   const trx = await knex.transaction()
 
   try {
-    const pending = await trx('pending_payments').where({ order_reference: orderReference }).first()
-
+    const pending = await trx('pending_payments').where({ order_reference: reference }).first()
     if (!pending) {
       await trx.rollback()
-      console.warn('Pending payment not found for:', orderReference)
       return res.status(404).json({ message: 'Pending payment not found' })
     }
 
-    if (normalizedStatus === 'completed' || normalizedEvent === 'payment completed') {
-      // Success flow
+    if (event_type === 'payment.completed' && status === 'completed') {
+      // Payment success flow
       const cart = await trx('carts').where({ id: pending.cart_id }).first()
       const items = await trx('cart_items').where({ cart_id: cart.id }).join('products', 'cart_items.product_id', 'products.id')
 
@@ -73,19 +54,18 @@ const clickPesaWebhookHandler = async (req, res) => {
       })
 
       await trx('pending_payments').where({ id: pending.id }).del()
+
       await trx.commit()
 
-      console.log(`Payment successful and order ${order.id} created.`)
       return res.status(200).json({ status: 'order created' })
-    }
-
-    if (normalizedStatus === 'failed' || normalizedEvent === 'payment failed') {
-      // Failure flow
+    } else if (event_type === 'payment.failed' || status === 'failed') {
+      // Payment failure flow
       await trx('pending_payments').where({ id: pending.id }).del()
 
+      // Optional: Insert a record in payments or logs table to track failed payments
       await trx('payments').insert({
-        order_id: null,
-        amount: amount || 0,
+        order_id: null, // No order created on failure
+        amount,
         payment_method: 'USSD',
         status: 'Failed',
         transaction_id,
@@ -93,12 +73,14 @@ const clickPesaWebhookHandler = async (req, res) => {
       })
 
       await trx.commit()
-      console.warn(`Payment failed for orderRef: ${orderReference}`)
-      return res.status(200).json({ status: 'payment failed handled' })
-    }
 
-    await trx.rollback()
-    return res.status(400).json({ message: 'Unsupported status or event' })
+      // You can also add logic here to notify user by email or other channels if you want
+
+      return res.status(200).json({ status: 'payment failed handled' })
+    } else {
+      await trx.rollback()
+      return res.status(400).json({ message: 'Unsupported event or status' })
+    }
   } catch (err) {
     await trx.rollback()
     console.error('Webhook error:', err)
