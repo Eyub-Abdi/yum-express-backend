@@ -106,12 +106,11 @@ app.get('/', async (req, res) => {
   //     token: 'verification-token-generated'
   //   }
   // })
+  throw new Error('Utumbo wa kima')
   const password = generateDefaultPassword()
   const response = await sendSMS('255657777687', orderConfirmationMsg)
   res.status(200).json(response.data)
 })
-// const p = Promise.reject(new Error('Utumbo wa kima'))
-// p.then(() => console.log('Done'))
 
 app.use(error)
 const port = process.env.PORT || 5000

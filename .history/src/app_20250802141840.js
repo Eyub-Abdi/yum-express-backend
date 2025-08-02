@@ -40,6 +40,9 @@ const generateDefaultPassword = require('./utils/passwordGenerator')
 const { buildWelcomeMessage } = require('./utils/welcomeMessages')
 const generateOtp = require('./utils/otpGenerator')
 
+process.on('uncaughtException', () => process.exit(1))
+process.on('unhandledRejection', () => process.exit(1))
+
 if (!config.jwt.secret) {
   debug('FATAL ERROR, JWT_SECRET IS NOT SET')
   process.exit(1)
@@ -110,8 +113,8 @@ app.get('/', async (req, res) => {
   const response = await sendSMS('255657777687', orderConfirmationMsg)
   res.status(200).json(response.data)
 })
-// const p = Promise.reject(new Error('Utumbo wa kima'))
-// p.then(() => console.log('Done'))
+const p = Promise.reject(new Error('Utumbo wa kima'))
+p.then(() => console.log('Done'))
 
 app.use(error)
 const port = process.env.PORT || 5000

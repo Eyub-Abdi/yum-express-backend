@@ -1,5 +1,5 @@
 require('express-async-errors')
-const logger = require('./utils/logger')
+const winston = require('winston')
 const express = require('express')
 const app = express()
 const path = require('path')
@@ -106,13 +106,12 @@ app.get('/', async (req, res) => {
   //     token: 'verification-token-generated'
   //   }
   // })
+  // throw new Error('Utumbo wa kima')
   const password = generateDefaultPassword()
   const response = await sendSMS('255657777687', orderConfirmationMsg)
   res.status(200).json(response.data)
 })
-// const p = Promise.reject(new Error('Utumbo wa kima'))
-// p.then(() => console.log('Done'))
 
 app.use(error)
 const port = process.env.PORT || 5000
-app.listen(port, () => logger.info(`Listening on port ${port}...`))
+app.listen(port, () => winston.info(`Listening on port ${port}...`))

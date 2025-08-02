@@ -1,0 +1,8 @@
+2025-08-02 14:19:25 [31merror[39m: Error: Utumbo wa kima
+    at Object.<anonymous> (/home/basir-security/Desktop/yum-express-backend/src/app.js:113:26)
+    at Module._compile (node:internal/modules/cjs/loader:1529:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+    at Module.load (node:internal/modules/cjs/loader:1275:32)
+    at Module._load (node:internal/modules/cjs/loader:1096:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    at node:internal/main/run_main_module:28:49

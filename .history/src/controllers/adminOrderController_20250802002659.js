@@ -220,10 +220,8 @@ const getAllOrders = async (req, res) => {
     },
     vendor: {
       id: order.vendor_id,
-      business_name: order.vendor_business_name,
-      phone: order.vendor_phone
+      business_name: order.vendor_business_name
     },
-
     order_status: order.order_status,
     payment_status: order.payment_status,
     payment_method: order.payment_method || null,

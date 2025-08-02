@@ -1,10 +1,7 @@
-require('express-async-errors')
-const logger = require('./utils/logger')
 const express = require('express')
 const app = express()
 const path = require('path')
 const debug = require('debug')('app')
-const error = require('./middleware/error')
 const cors = require('cors')
 const config = require('../config/default')
 const { sendSMS } = require('./services/smsService')
@@ -106,13 +103,16 @@ app.get('/', async (req, res) => {
   //     token: 'verification-token-generated'
   //   }
   // })
+
   const password = generateDefaultPassword()
   const response = await sendSMS('255657777687', orderConfirmationMsg)
   res.status(200).json(response.data)
 })
-// const p = Promise.reject(new Error('Utumbo wa kima'))
-// p.then(() => console.log('Done'))
 
-app.use(error)
+app.use(function (err, req, res, next) {
+  // Log the console.error(res);
+  console.log('Logging the error')
+  res.status(500).send('Something went wrong.')
+})
 const port = process.env.PORT || 5000
-app.listen(port, () => logger.info(`Listening on port ${port}...`))
+app.listen(port, () => debug(`Listening on port ${port}...`))

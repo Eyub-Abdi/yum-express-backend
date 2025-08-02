@@ -132,7 +132,7 @@ const getAllOrders = async (req, res) => {
   const offset = (page - 1) * limit
 
   const ordersQuery = knex('orders')
-    .select('orders.*', 'customers.first_name as customer_first_name', 'customers.last_name as customer_last_name', 'customers.phone as customer_phone', 'vendors.business_name as vendor_business_name', 'vendors.phone as vendor_phone', 'payments.payment_method')
+    .select('orders.*', 'customers.first_name as customer_first_name', 'customers.last_name as customer_last_name', 'customers.phone as customer_phone', 'vendors.business_name as vendor_business_name', 'payments.payment_method')
     .leftJoin('customers', 'orders.customer_id', 'customers.id')
     .leftJoin('vendors', 'orders.vendor_id', 'vendors.id')
     .leftJoin('payments', 'orders.id', 'payments.order_id')
@@ -220,10 +220,8 @@ const getAllOrders = async (req, res) => {
     },
     vendor: {
       id: order.vendor_id,
-      business_name: order.vendor_business_name,
-      phone: order.vendor_phone
+      business_name: order.vendor_business_name
     },
-
     order_status: order.order_status,
     payment_status: order.payment_status,
     payment_method: order.payment_method || null,
