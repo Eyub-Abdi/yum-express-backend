@@ -1,2 +1,13 @@
 node_modules/
+
+logs/
+*.log
+
+.env
+
+.vscode/
+.idea/
 .history/
+
+.DS_Store
+Thumbs.db
