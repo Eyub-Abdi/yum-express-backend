@@ -23,7 +23,7 @@ exports.sendSupportEmail = async (req, res) => {
   name.toUpperCase()
   try {
     await sendEmail({
-      recipientEmail: 'ayubabdiy@gmail.com',
+      recipientEmail: 'yumexpreess@gmail.com',
       firstName: name,
       type: 'support',
       payload: { email, phone, subject, message }

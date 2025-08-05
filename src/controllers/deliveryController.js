@@ -130,4 +130,39 @@ const pickDelivery = async (req, res) => {
   res.json({ message: 'Delivery successfully picked', delivery: updated[0] })
 }
 
-module.exports = { estimateDeliveryFee, getAvailableDeliveries, pickDelivery }
+const getAllDeliveries = async (req, res) => {
+  const deliveries = await knex('deliveries as d')
+    .select(
+      'd.id',
+      'd.order_id',
+      'd.status',
+      'd.estimated_time',
+      'd.lat',
+      'd.lng',
+      'd.phone',
+      'd.address',
+      'd.street_name',
+      'd.delivery_notes',
+      'd.delivered_at',
+      'd.created_at',
+      'd.updated_at',
+      'd.confirmed_delivered',
+      'd.delivery_fee',
+      'd.distance_km',
+      knex.raw(`c.first_name || ' ' || c.last_name as customer_name`),
+      'c.phone as customer_phone',
+      knex.raw(`v.business_name as vendor`),
+      knex.raw(`dr.first_name || ' ' || dr.last_name as driver_name`),
+      'dr.phone as driver_phone'
+    )
+    .join('customers as c', 'd.customer_id', 'c.id')
+    .join('vendors as v', 'd.vendor_id', 'v.id')
+    .leftJoin('drivers as dr', 'd.assigned_to', 'dr.id')
+    .orderBy('d.created_at', 'desc')
+
+  res.json({ deliveries })
+}
+
+
+
+module.exports = { getAllDeliveries,estimateDeliveryFee, getAvailableDeliveries, pickDelivery }

@@ -52,8 +52,6 @@ const sendEmail = async ({ recipientEmail, firstName, type, payload = {} }) => {
         subject = 'Support Request Received - Yum-Express'
         mainHeading = 'Support Request Received'
         bodyMessage = `Hi ${firstName},<br><br>We've received your support request and will get back to you shortly.<br><br><b>Message:</b><br>${payload.message}`
-        actionLink = payload.supportTicketUrl || '#'
-        buttonText = 'View Ticket'
         break
 
       case 'passwordReset':

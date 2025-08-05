@@ -78,7 +78,7 @@ app.use('/api/reviews', reviewRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/checkout', checkoutRoutes)
 app.use('/api/order', orderRoutes)
-app.use('/api/delivery', deliveryRoutes) // Delivery routes
+app.use('/api/deliveries', deliveryRoutes) // Delivery routes
 app.use('/api/store', storeRoutes)
 app.use('/api/sales', salesRoutes)
 app.use('/api/drivers', driverRoutes)
@@ -118,20 +118,20 @@ app.get('/', async (req, res) => {
   // })
   // const password = generateDefaultPassword()
   // const response = await sendSMS('255657777687', orderConfirmationMsg)
-  await sendEmail({
-    recipientEmail: ['ayubabdiy@gmail.com'], // multiple admins
-    firstName: 'Admin',
-    type: 'rejectOrder',
-    payload: {
-      orderId: 1234,
-      vendorName: 'Poazz Restaurant',
-      reason: 'Product out of stock',
-      vendorPhone: '+255657777687',
-      customerPhone: '+255754321098',
-      subject: 'Order #1234 Rejected by Vendor',
-      title: 'Order Rejected'
-    }
-  })
+  // await sendEmail({
+  //   recipientEmail: ['ayubabdiy@gmail.com'], // multiple admins
+  //   firstName: 'Admin',
+  //   type: 'rejectOrder',
+  //   payload: {
+  //     orderId: 1234,
+  //     vendorName: 'Poazz Restaurant',
+  //     reason: 'Product out of stock',
+  //     vendorPhone: '+255657777687',
+  //     customerPhone: '+255754321098',
+  //     subject: 'Order #1234 Rejected by Vendor',
+  //     title: 'Order Rejected'
+  //   }
+  // })
 
   res.status(200).json('Done')
 })
