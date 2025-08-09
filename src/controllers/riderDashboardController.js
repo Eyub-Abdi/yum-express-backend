@@ -2,7 +2,7 @@ const knex = require('../db/knex')
 
 const getRiderDashboard = async (req, res) => {
   try {
-    const riderId = req.user?.id || 3 // Get rider ID from params or auth
+    const riderId = req.user?.id // Get rider ID from params or auth
 
     const [
       totalDeliveries,
