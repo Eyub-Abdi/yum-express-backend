@@ -1,0 +1,8 @@
+2025-08-12 13:46:24 [31merror[39m: Error: data and salt arguments required
+    at Object.hash (/home/basir-security/Desktop/yum-express-backend/node_modules/bcrypt/bcrypt.js:137:17)
+    at /home/basir-security/Desktop/yum-express-backend/node_modules/bcrypt/promises.js:29:12
+    at new Promise (<anonymous>)
+    at module.exports.promise (/home/basir-security/Desktop/yum-express-backend/node_modules/bcrypt/promises.js:20:12)
+    at Object.hash (/home/basir-security/Desktop/yum-express-backend/node_modules/bcrypt/bcrypt.js:133:25)
+    at resetPassword (/home/basir-security/Desktop/yum-express-backend/src/controllers/resetPassword.js:28:39)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)

@@ -1,0 +1,64 @@
+2025-08-10 16:51:03 [31merror[39m: Error: EIO: i/o error, write
+    at writeSync (node:fs:934:3)
+    at SyncWriteStream._write (node:internal/fs/sync_write_stream:27:5)
+    at writeOrBuffer (node:internal/streams/writable:572:12)
+    at _write (node:internal/streams/writable:501:10)
+    at Writable.write (node:internal/streams/writable:510:10)
+    at Function.log (/home/basir-security/Desktop/yum-express-backend/node_modules/debug/src/node.js:194:24)
+    at debug (/home/basir-security/Desktop/yum-express-backend/node_modules/debug/src/common.js:113:10)
+    at Object.<anonymous> (/home/basir-security/Desktop/yum-express-backend/src/app.js:46:8)
+    at Module._compile (node:internal/modules/cjs/loader:1529:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+2025-08-12 12:41:54 [31merror[39m: Error: Cannot find module './controllers/forgotPassword'
+Require stack:
+- /home/basir-security/Desktop/yum-express-backend/src/routes/authRoutes.js
+- /home/basir-security/Desktop/yum-express-backend/src/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1212:15)
+    at Module._load (node:internal/modules/cjs/loader:1043:27)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/home/basir-security/Desktop/yum-express-backend/src/routes/authRoutes.js:7:28)
+    at Module._compile (node:internal/modules/cjs/loader:1529:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+    at Module.load (node:internal/modules/cjs/loader:1275:32)
+    at Module._load (node:internal/modules/cjs/loader:1096:12)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+2025-08-12 12:43:22 [31merror[39m: Error: Cannot find module './controllers/forgotPassword'
+Require stack:
+- /home/basir-security/Desktop/yum-express-backend/src/routes/authRoutes.js
+- /home/basir-security/Desktop/yum-express-backend/src/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1212:15)
+    at Module._load (node:internal/modules/cjs/loader:1043:27)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/home/basir-security/Desktop/yum-express-backend/src/routes/authRoutes.js:7:28)
+    at Module._compile (node:internal/modules/cjs/loader:1529:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+    at Module.load (node:internal/modules/cjs/loader:1275:32)
+    at Module._load (node:internal/modules/cjs/loader:1096:12)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+2025-08-12 12:43:51 [31merror[39m: Error: Cannot find module './controllers/forgotPassword'
+Require stack:
+- /home/basir-security/Desktop/yum-express-backend/src/routes/authRoutes.js
+- /home/basir-security/Desktop/yum-express-backend/src/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1212:15)
+    at Module._load (node:internal/modules/cjs/loader:1043:27)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/home/basir-security/Desktop/yum-express-backend/src/routes/authRoutes.js:7:28)
+    at Module._compile (node:internal/modules/cjs/loader:1529:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+    at Module.load (node:internal/modules/cjs/loader:1275:32)
+    at Module._load (node:internal/modules/cjs/loader:1096:12)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+2025-08-12 12:45:05 [31merror[39m: ReferenceError: resetPassword is not defined
+    at Object.<anonymous> (/home/basir-security/Desktop/yum-express-backend/src/routes/authRoutes.js:15:37)
+    at Module._compile (node:internal/modules/cjs/loader:1529:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+    at Module.load (node:internal/modules/cjs/loader:1275:32)
+    at Module._load (node:internal/modules/cjs/loader:1096:12)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/home/basir-security/Desktop/yum-express-backend/src/app.js:15:20)
+    at Module._compile (node:internal/modules/cjs/loader:1529:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
