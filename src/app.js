@@ -61,12 +61,19 @@ debug(config.sms.senderId)
 
 app.use(express.json())
 app.use(cookiePerser())
+// app.use(
+//   cors({
+//     origin: 'http://localhost:3000', // or your frontend URL
+//     credentials: true
+//   })
+// )
 app.use(
   cors({
-    origin: 'http://localhost:3000', // or your frontend URL
+    origin: ['http://localhost:3000', 'https://yum-express.com'],
     credentials: true
   })
 )
+
 // SERVER STATIC FILES
 app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')))
 app.use('/api/webhook', webhookRoutes)
