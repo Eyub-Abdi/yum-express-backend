@@ -1,6 +1,6 @@
 const knex = require('../db/knex')
 const bcrypt = require('bcrypt')
-const { driverRegistrationSchema, driverQuerySchema, driverUpdateSchema } = require('../schemas/driverSchema')
+const { driverRegistrationSchema, driverQuerySchema, passwordUpdateSchema, driverUpdateSchema } = require('../schemas/driverSchema')
 const { validateId } = require('../utils/validateId')
 
 const { generateVerificationToken, generateVerificationTokenExpiry } = require('../services/tokenService')
@@ -248,6 +248,35 @@ const deleteDriver = async (req, res) => {
   return res.json({ message: 'Driver permanently deleted' })
 }
 
+const updateDriverPasswor = async (req, res) => {
+  // Validate input
+  const { error } = passwordUpdateSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message })
+  }
+
+  const driverId = req.user.id // Get ID from authenticated driver
+  const { old_password, new_password } = req.body
+
+  // Fetch driver from DB
+  const driver = await knex('drivers').where('id', driverId).first()
+  if (!driver) {
+    return res.status(404).json({ message: 'Driver not found' })
+  }
+
+  // Verify old password
+  const isMatch = await bcrypt.compare(old_password, driver.password_hash)
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Incorrect old password' })
+  }
+
+  // Hash new password and update
+  const hashedPassword = await bcrypt.hash(new_password, 10)
+  await knex('drivers').where('id', driverId).update({ password_hash: hashedPassword, updated_at: new Date() })
+
+  res.json({ message: 'Password updated successfully' })
+}
+
 const recoverDriver = async (req, res) => {
   const { id } = req.params
 
@@ -276,4 +305,4 @@ const verifyDriverEmail = async (req, res) => {
   verifyEmail('drivers', req, res)
 }
 
-module.exports = { registerDriver, getAllDrivers, getDriverById, getDriverProfile, deleteDriver, updateDriver, recoverDriver, verifyDriverEmail }
+module.exports = { registerDriver, getAllDrivers, getDriverById, getDriverProfile, deleteDriver, updateDriverPasswor, updateDriver, recoverDriver, verifyDriverEmail }

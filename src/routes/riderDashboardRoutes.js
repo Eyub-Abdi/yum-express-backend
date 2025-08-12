@@ -4,7 +4,7 @@ const { registerDriver, verifyDriverEmail, getDriverProfile, getDriverById, dele
 const authenticateUser = require('../middleware/authenticateUser')
 const { getRiderDashboard } = require('../controllers/riderDashboardController')
 // Route to register a driver
-router.get('/dashboard', getRiderDashboard)
+router.get('/dashboard', authenticateUser, getRiderDashboard)
 router.get('/verify-email', verifyDriverEmail)
 
 module.exports = router

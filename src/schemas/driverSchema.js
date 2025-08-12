@@ -25,4 +25,10 @@ const driverUpdateSchema = Joi.object({
   phone: Joi.string().pattern(/^255\d{9}$/),
   vehicle_details: Joi.string()
 })
-module.exports = { driverRegistrationSchema, driverQuerySchema, driverUpdateSchema }
+
+const passwordUpdateSchema = Joi.object({
+  old_password: Joi.string().required(),
+  new_password: Joi.string().min(6).required()
+})
+
+module.exports = { driverRegistrationSchema, driverQuerySchema, driverUpdateSchema, passwordUpdateSchema }

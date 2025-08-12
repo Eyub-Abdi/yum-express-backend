@@ -2,6 +2,7 @@ require('express-async-errors')
 const logger = require('./utils/logger')
 const express = require('express')
 const app = express()
+const compression = require('compression')
 const path = require('path')
 const debug = require('debug')('app')
 const error = require('./middleware/error')
@@ -61,6 +62,7 @@ debug(config.sms.senderId)
 
 app.use(express.json())
 app.use(cookiePerser())
+app.use(compression())
 // app.use(
 //   cors({
 //     origin: 'http://localhost:3000', // or your frontend URL
@@ -69,7 +71,7 @@ app.use(cookiePerser())
 // )
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'https://yum-express.com'],
+    origin: ['http://localhost:3000', 'https://yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com/'],
     credentials: true
   })
 )
