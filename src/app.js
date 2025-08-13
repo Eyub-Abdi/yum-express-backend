@@ -64,23 +64,37 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(compression())
 
+import cors from 'cors'
+
 const allowedOrigins = ['http://localhost:3000', 'https://aabeb087cceb.ngrok-free.app', 'https://yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com']
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin)
-  }
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  res.header('Access-Control-Allow-Credentials', 'true')
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin like mobile apps or curl
+      if (!origin) return callback(null, true)
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+    credentials: true
+  })
+)
 
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200)
-  }
-
-  next()
-})
+// Optional: handle preflight requests globally
+app.options(
+  '*',
+  cors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+    credentials: true
+  })
+)
 
 // SERVER STATIC FILES
 app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')))
