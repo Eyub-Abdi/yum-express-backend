@@ -231,7 +231,7 @@ debug(config.sms.password)
 debug(config.sms.isTestMode)
 debug(config.sms.senderId)
 
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'https://aabeb087cceb.ngrok-free.app', 'https://yum-express.com', 'https://www.yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com', 'https://api.yum-express.com']
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'https://yum-express.com', 'https://www.yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com', 'https://api.yum-express.com']
 
 const corsOptions = {
   origin: (origin, callback) => {
