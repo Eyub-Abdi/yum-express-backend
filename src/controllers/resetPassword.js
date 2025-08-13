@@ -1,9 +1,21 @@
 const knex = require('../db/knex')
 const bcrypt = require('bcrypt')
+const Joi = require('joi')
 
 async function resetPassword(req, res) {
-  const { token, newPassword } = req.body
+  // Joi schema
+  const schema = Joi.object({
+    token: Joi.string().trim().required(),
+    password: Joi.string().min(8).max(100).required()
+  })
 
+  // Validate request body
+  const { error, value } = schema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message })
+  }
+
+  const { token, password } = value
   // 1. Find valid reset record
   const resetRecord = await knex('password_resets').where({ token, used: false }).andWhere('expires_at', '>', new Date()).first()
 
@@ -25,14 +37,13 @@ async function resetPassword(req, res) {
   }
 
   // Hash the new password
-  const hashedPassword = await bcrypt.hash(newPassword, 10)
+  const hashedPassword = await bcrypt.hash(password, 10)
 
   // Update user's password and updated_at timestamp
   await knex(tableName).where({ id: resetRecord.user_id }).update({
     password_hash: hashedPassword,
     updated_at: new Date()
   })
-
   // Mark token as used
   await knex('password_resets').where({ id: resetRecord.id }).update({ used: true, used_at: new Date() })
 

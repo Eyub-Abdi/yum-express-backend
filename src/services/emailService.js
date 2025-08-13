@@ -58,7 +58,7 @@ const sendEmail = async ({ recipientEmail, firstName, type, payload = {} }) => {
         subject = 'Reset Your Password - Yum-Express'
         mainHeading = 'Reset Your Password'
         bodyMessage = `Hi ${firstName},<br><br>You requested to reset your password. Click the button below to continue. This link will expire in <b>1 hour</b>.`
-        actionLink = `https//yum-express.com/reset-password?token=${payload.token}`
+        actionLink = `http://localhost:3000/reset-password?token=${payload.token}`
         buttonText = 'Reset Password'
         break
 

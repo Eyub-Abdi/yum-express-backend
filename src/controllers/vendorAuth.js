@@ -14,7 +14,6 @@ const loginVendor = async (req, res) => {
   }
 
   const { email, password } = req.body
-
   // Find vendor by email
   const vendor = await knex('vendors').where({ email }).first()
   if (!vendor) {

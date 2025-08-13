@@ -2,7 +2,6 @@ const knex = require('../db/knex')
 const { sendEmail } = require('../services/emailService')
 const { generateSessionToken } = require('../utils/generateSessionToken')
 const forgotPasswordSchema = require('../schemas/forgotPasswordSchema')
-const config = require('../../config/default')
 
 async function forgotPassword(req, res) {
   // Validate request body
@@ -54,7 +53,6 @@ async function forgotPassword(req, res) {
     type: 'passwordReset',
     payload: { token }
   })
-
   return res.status(200).json({ message: 'If your email exists, you will receive a password reset link shortly.' })
 }
 
