@@ -64,9 +64,18 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(compression())
 
+// app.use(
+//   cors({
+//     origin: ['http://localhost:3000', 'https://aabeb087cceb.ngrok-free.app', 'https://yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com'],
+//     credentials: true
+//   })
+// )
+
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'https://aabeb087cceb.ngrok-free.app', 'https://yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com'],
+    origin: (origin, callback) => {
+      callback(null, origin || '*') // Allow any requesting origin
+    },
     credentials: true
   })
 )
