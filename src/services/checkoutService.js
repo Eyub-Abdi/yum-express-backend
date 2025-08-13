@@ -1,4 +1,6 @@
 const { processPayment } = require('../services/paymentService')
+const { sendEmail } = require('./emailService')
+
 // const { processCreditCardPayment } = require('../services/creditCardPaymentService') // We'll create this
 
 async function createOrderAndRelated(trx, cart, items, deliveryData, totalPrice) {
@@ -85,15 +87,24 @@ async function handleMobilePayment(trx, cart, items, deliveryData, totalPrice, p
 }
 
 // async function handleCashPayment(trx, cart, items, deliveryData, totalPrice) {
-//   const order = await createOrderAndRelated(trx, cart, items, deliveryData, totalPrice)
-//   console.log(order)
+//   const orderReference = `ORD${Date.now()}${cart.customer_id}`
 
-//   // Decrement stock
+//   const order = await createOrderAndRelated(trx, cart, items, deliveryData, totalPrice)
+
+//   await trx('payments').insert({
+//     order_id: order.id,
+//     amount: totalPrice,
+//     payment_method: 'CASH',
+//     status: 'Pending',
+//     transaction_id: null,
+//     order_reference: orderReference,
+//     message: 'Cash on delivery'
+//   })
+
 //   for (const item of items) {
 //     await trx('products').where({ id: item.product_id }).decrement('stock', item.quantity)
 //   }
 
-//   // Clear cart
 //   await trx('cart_items').where({ cart_id: cart.id }).del()
 //   await trx('carts').where({ id: cart.id }).del()
 
@@ -125,7 +136,29 @@ async function handleCashPayment(trx, cart, items, deliveryData, totalPrice) {
   })
 
   for (const item of items) {
+    // Reduce stock
     await trx('products').where({ id: item.product_id }).decrement('stock', item.quantity)
+
+    // Check updated stock
+    const updatedProduct = await trx('products').select('stock', 'vendor_id', 'name').where({ id: item.product_id }).first()
+
+    if (updatedProduct.stock <= 5) {
+      // Fetch vendor email & first name
+      const vendor = await trx('vendors').select('email', 'first_name').where({ id: updatedProduct.vendor_id }).first()
+
+      if (vendor && vendor.email) {
+        await sendEmail({
+          recipientEmail: vendor.email,
+          firstName: vendor.first_name || 'Vendor',
+          type: 'info',
+          payload: {
+            subject: 'Low Stock Alert',
+            title: 'Stock Running Low',
+            message: `Your product <b>${updatedProduct.name}</b> now has only <b>${updatedProduct.stock}</b> items left in stock.`
+          }
+        })
+      }
+    }
   }
 
   await trx('cart_items').where({ cart_id: cart.id }).del()
