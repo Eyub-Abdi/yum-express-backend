@@ -64,21 +64,23 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(compression())
 
-// app.use(
-//   cors({
-//     origin: ['http://localhost:3000', 'https://aabeb087cceb.ngrok-free.app', 'https://yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com'],
-//     credentials: true
-//   })
-// )
+const allowedOrigins = ['http://localhost:3000', 'https://aabeb087cceb.ngrok-free.app', 'https://yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com']
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      callback(null, origin || '*') // Allow any requesting origin
-    },
-    credentials: true
-  })
-)
+app.use((req, res, next) => {
+  const origin = req.headers.origin
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin)
+  }
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.header('Access-Control-Allow-Credentials', 'true')
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200)
+  }
+
+  next()
+})
 
 // SERVER STATIC FILES
 app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')))
