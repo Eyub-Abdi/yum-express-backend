@@ -64,8 +64,6 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(compression())
 
-import cors from 'cors'
-
 const allowedOrigins = ['http://localhost:3000', 'https://aabeb087cceb.ngrok-free.app', 'https://yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com']
 
 app.use(
@@ -74,11 +72,22 @@ app.use(
       // allow requests with no origin like mobile apps or curl
       if (!origin) return callback(null, true)
       if (allowedOrigins.includes(origin)) {
-        callback(null, true)
+        return callback(null, true)
       } else {
-        callback(new Error('Not allowed by CORS'))
+        return callback(new Error('Not allowed by CORS'))
       }
     },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+    credentials: true
+  })
+)
+
+// Handle preflight OPTIONS request for all routes
+app.options(
+  '*',
+  cors({
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
     credentials: true
