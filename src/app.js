@@ -60,22 +60,15 @@ debug(config.sms.password)
 debug(config.sms.isTestMode)
 debug(config.sms.senderId)
 
-app.use(express.json())
-app.use(cookieParser())
-app.use(compression())
-
 const allowedOrigins = ['http://localhost:3000', 'https://aabeb087cceb.ngrok-free.app', 'https://yum-express.com', 'https://vendor.yum-express.com', 'https://riders.yum-express.com']
 
+// Global CORS middleware
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow requests with no origin like mobile apps or curl
-      if (!origin) return callback(null, true)
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true)
-      } else {
-        return callback(new Error('Not allowed by CORS'))
-      }
+    origin: (origin, callback) => {
+      if (!origin) return callback(null || true || '*') // allow curl, mobile apps
+      if (allowedOrigins.includes(origin)) return callback(null, true)
+      callback(new Error('Not allowed by CORS'))
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
@@ -83,16 +76,12 @@ app.use(
   })
 )
 
-// Handle preflight OPTIONS request for all routes
-app.options(
-  '*',
-  cors({
-    origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
-    credentials: true
-  })
-)
+// Handle preflight requests for all routes
+app.options('*', cors())
+
+app.use(express.json())
+app.use(cookieParser())
+app.use(compression())
 
 // Optional: handle preflight requests globally
 app.options(
